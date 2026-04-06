@@ -19,8 +19,6 @@
 .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--white);border-top:1px solid var(--border);display:flex;padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom));z-index:10;box-shadow:0 -2px 10px rgba(0,0,0,0.04)}
 .nav-tab{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;background:none;border:none;color:var(--text3);font-size:10px;font-weight:600;font-family:var(--font);cursor:pointer}.nav-tab.active{color:var(--navy)}.nav-tab-icon{font-size:22px}
 .screen{display:none}.screen.active{display:block;animation:fadeUp .25s ease}@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-
-/* LOGIN */
 .login-wrap{display:flex;align-items:center;justify-content:center;min-height:100dvh;padding:24px;background:linear-gradient(160deg,var(--navy-d),var(--navy),var(--navy-l))}
 .login-box{width:100%;max-width:360px;background:var(--white);border-radius:20px;padding:40px 28px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
 .login-logo{margin-bottom:20px;background:var(--navy);border-radius:16px;width:80px;height:80px;display:flex;align-items:center;justify-content:center;margin-left:auto;margin-right:auto;box-shadow:0 8px 25px rgba(15,29,61,0.3)}
@@ -30,8 +28,6 @@
 .btn{width:100%;padding:14px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-family:var(--font);font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}.btn:active{transform:scale(0.98)}.btn:disabled{opacity:.5}.btn-blue{background:var(--blue)}.btn-success{background:var(--success)}.btn-outline{background:transparent;color:var(--text);border:1.5px solid var(--border);margin-top:10px;font-weight:500;font-size:13px}
 .link{color:var(--blue);font-size:13px;cursor:pointer;margin-top:16px;display:inline-block;border:none;background:none;font-family:var(--font);font-weight:500}.error{color:var(--danger);font-size:13px;margin-top:10px;min-height:20px}
 .login-main{display:block}.login-main.hidden{display:none}.reset-wrap{display:none}.reset-wrap.active{display:block}
-
-/* TARGA MODAL */
 .targa-overlay{position:fixed;inset:0;background:rgba(15,29,61,0.9);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;padding:24px}
 .targa-card{background:var(--white);border-radius:20px;padding:36px 28px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
 .targa-hello{font-size:24px;margin-bottom:4px}
@@ -39,16 +35,10 @@
 .targa-sub{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
 .targa-input{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--navy);font-family:var(--font);font-size:22px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:3px;outline:none;margin-bottom:16px}.targa-input:focus{border-color:var(--blue)}
 .targa-btn{width:100%;padding:16px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-family:var(--font);font-size:16px;font-weight:700;cursor:pointer}.targa-btn:active{transform:scale(0.98)}
-
-/* KPI */
 .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.kpi{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.kpi.wide{grid-column:span 2}.kpi.accent{background:var(--navy);border-color:var(--navy);color:#fff}.kpi.accent .kpi-label{color:rgba(255,255,255,0.6)}.kpi.accent .kpi-sub{color:rgba(255,255,255,0.5)}.kpi-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}.kpi-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1.1}.kpi.accent .kpi-val{color:#fff}.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
-
-/* SECTIONS */
 .section-title{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:12px;display:flex;align-items:center;gap:8px}.section-title::before{content:'';width:3px;height:16px;background:var(--blue);border-radius:2px}
 .date-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin:16px 0 8px;padding-bottom:6px;border-bottom:1px solid var(--border)}
-
-/* REPORT CARD */
-.report-card{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow)}
+.report-card{background:var(--white);border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:10px;box-shadow:var(--shadow);position:relative}
 .report-card:active{background:var(--bg)}
 .report-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .report-filiale{font-size:14px;font-weight:700;color:var(--navy)}
@@ -57,30 +47,21 @@
 .report-bottom{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .report-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;background:var(--blue-bg);color:var(--blue)}
 .report-note{font-size:12px;color:var(--text2);margin-top:6px;font-style:italic}
-
-/* FORM */
+.btn-delete{position:absolute;top:10px;right:10px;background:none;border:none;color:#dc2626;font-size:16px;cursor:pointer;padding:2px 6px;opacity:0.35;transition:opacity 0.2s}
+.btn-delete:hover,.btn-delete:active{opacity:1}
 .form-group{margin-bottom:16px}.form-label{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;display:block}
 select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' fill='none' stroke='%2364748b' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
 .num-input{width:100%;padding:20px;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--navy);font-family:var(--font);font-size:32px;font-weight:800;text-align:center;outline:none;margin-bottom:4px}.num-input:focus{border-color:var(--blue)}
 .num-hint{font-size:12px;color:var(--text3);text-align:center;margin-bottom:16px}
-
-/* SUCCESS */
 .success-msg{text-align:center;padding:40px 20px}.success-icon{font-size:56px;margin-bottom:12px}.success-text{font-size:20px;font-weight:800;color:var(--success);margin-bottom:4px}.success-sub{font-size:14px;color:var(--text2);line-height:1.5}
-
-/* COMPENSI */
 .comp-row{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--border)}.comp-mese{font-size:14px;font-weight:600;color:var(--navy)}.comp-cnt{font-size:12px;color:var(--text2)}.comp-val{font-size:15px;font-weight:800;color:var(--blue)}
-
-/* PROFILO */
 .prof-card{background:var(--navy);border-radius:var(--radius);padding:24px 20px;color:#fff;margin-bottom:20px}.prof-name{font-size:20px;font-weight:800;margin-bottom:2px}.prof-email{font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:14px}.prof-badges{display:flex;gap:8px;flex-wrap:wrap}.prof-badge{font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.8)}
 .targa-display{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-top:10px}.targa-plate{font-size:15px;font-weight:800;letter-spacing:2px}.targa-change{font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline}
-
 .empty{text-align:center;padding:40px 20px;color:var(--text3)}.empty-icon{font-size:40px;margin-bottom:8px}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 8px 30px rgba(0,0,0,0.2);animation:toastIn .3s ease}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}}
 </style>
 </head>
 <body>
-
-<!-- LOGIN -->
 <div id="loginView" class="login-wrap"><div class="login-box">
 <div class="login-logo"><img src="avr-logo.png" alt="AVR"></div>
 <div class="login-title">Area Driver</div><div class="login-sub">Accedi per gestire le tue consegne</div>
@@ -97,8 +78,6 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-outline" onclick="hideReset()">Torna al login</button>
 <div id="resetMsg" class="error"></div></div>
 </div></div>
-
-<!-- TARGA MODAL -->
 <div id="targaView" class="targa-overlay" style="display:none">
 <div class="targa-card">
 <div class="targa-hello">👋</div>
@@ -106,26 +85,19 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="targa-sub">Indicami la targa del mezzo con cui inizierai il tuo turno</div>
 <input type="text" id="targaInput" class="targa-input" placeholder="AA000BB" maxlength="8" oninput="this.value=this.value.toUpperCase()">
 <button class="targa-btn" onclick="confermaTarga()">Inizia il turno →</button>
-</div>
-</div>
-
-<!-- APP -->
+</div></div>
 <div id="appView" class="app" style="display:none">
 <header class="app-header"><div class="header-top">
 <div class="header-logo"><img src="avr-logo.png" alt="AVR" style="height:32px"><div><div class="header-name" id="driverName">—</div><div class="header-city" id="driverCity">Driver</div></div></div>
 <button class="btn-out" onclick="doLogout()">Esci</button>
 </div></header>
-
 <div class="app-body">
-<!-- TAB OGGI -->
 <div id="tabOggi" class="screen active">
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseEuro">€0,00</div></div></div>
 <button class="btn btn-blue" onclick="showTab('nuova')" style="margin-bottom:20px;font-size:16px">+ Registra consegne</button>
 <div class="section-title">Report di oggi</div><div id="listaOggi"></div>
 <div class="section-title" style="margin-top:24px">Report recenti</div><div id="listaRecenti"></div>
 </div>
-
-<!-- TAB NUOVA -->
 <div id="tabNuova" class="screen">
 <div id="formNuova">
 <div class="section-title">Registra consegne per fascia</div>
@@ -142,15 +114,10 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="success-sub" id="successDetail"></div>
 <button class="btn btn-blue" onclick="resetNuova()" style="margin-top:20px">Registra altra fascia</button>
 <button class="btn btn-outline" onclick="showTab('oggi')">Torna alla home</button>
-</div>
-</div>
-
-<!-- TAB COMPENSI -->
+</div></div>
 <div id="tabCompensi" class="screen">
 <div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Compenso mese corrente</div><div class="kpi-val" id="kCompenso">€0,00</div><div class="kpi-sub" id="kCompDetail">0 consegne × €3,50</div></div></div>
 <div class="section-title">Storico compensi</div><div id="listaCompensi"></div></div>
-
-<!-- TAB PROFILO -->
 <div id="tabProfilo" class="screen">
 <div class="prof-card">
 <div class="prof-name" id="profNome">—</div>
@@ -161,14 +128,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div></div>
 </div>
-
 <nav class="bottom-nav">
 <button class="nav-tab active" onclick="showTab('oggi')" data-tab="oggi"><span class="nav-tab-icon">📦</span>Oggi</button>
 <button class="nav-tab" onclick="showTab('nuova')" data-tab="nuova"><span class="nav-tab-icon">➕</span>Nuova</button>
 <button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">💰</span>Compensi</button>
 <button class="nav-tab" onclick="showTab('profilo')" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
 </nav></div>
-
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -176,7 +141,6 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 firebase.initializeApp({apiKey:"AIzaSyCleejDdWN6w41TcBw4fvyAPr_6rxU8Bgs",authDomain:"avr-logistic-dashboard.firebaseapp.com",projectId:"avr-logistic-dashboard",storageBucket:"avr-logistic-dashboard.firebasestorage.app",messagingSenderId:"323721042739",appId:"1:323721042739:web:a9fa1710eeb8cfe3357c46"});
 var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],cc=3.50,fl=[],targaOggi='';
 
-// AUTH
 function doLogin(){var e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPw').value;document.getElementById('loginErr').textContent='';if(!e||!p){document.getElementById('loginErr').textContent='Inserisci email e password';return}auth.signInWithEmailAndPassword(e,p).catch(function(r){var m='Errore di accesso';if(r.code==='auth/user-not-found'||r.code==='auth/wrong-password'||r.code==='auth/invalid-credential')m='Email o password non validi';if(r.code==='auth/too-many-requests')m='Troppi tentativi';document.getElementById('loginErr').textContent=m})}
 function showReset(){document.getElementById('loginMain').classList.add('hidden');document.getElementById('resetWrap').classList.add('active');document.getElementById('resetEmail').value=document.getElementById('loginEmail').value}
 function hideReset(){document.getElementById('loginMain').classList.remove('hidden');document.getElementById('resetWrap').classList.remove('active')}
@@ -185,51 +149,40 @@ function doLogout(){targaOggi='';auth.signOut()}
 auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
-// TARGA
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
 function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;showToast('Turno iniziato con '+targaOggi)}
 
-// INIT
 async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{dp={cognome:email.split('@')[0].toUpperCase(),nome:'',citta:'??',contratto:'—'}}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+dp.cognome+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';document.getElementById('profCosto').textContent='€'+cc.toFixed(2)+'/consegna';
-await loadFl();await loadReports();
-// Show targa modal
-document.getElementById('targaView').style.display='flex'}
+await loadFl();await loadReports();document.getElementById('targaView').style.display='flex'}
 
 async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){return(a.codice||0)-(b.codice||0)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.codice+(f.nome?' — '+f.nome:'')+' ('+(f.area||'')+')';sel.appendChild(o)})}
 
 async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
 try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
-// Also count from consegne collection
 try{var s2=await db.collection('consegne').where('driver','>=',dn).where('driver','<=',dn+'\uf8ff').orderBy('driver').limit(5000).get();var fromSheets=0;s2.docs.forEach(function(d){var x=d.data();if(x.fonte==='GAS')fromSheets++});dp._gasConsegne=fromSheets}catch(e){dp._gasConsegne=0}
 rOggi();rComp();rProf()}
 
-// RENDER OGGI
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
 var consOggi=0,consMese=0;
 reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
-// Add GAS consegne for month count
 consMese+=(dp._gasConsegne||0);
 document.getElementById('kOggi').textContent=consOggi;document.getElementById('kMese').textContent=consMese;document.getElementById('kMeseEuro').textContent='€'+(consMese*cc).toFixed(2).replace('.',',');
-
-// Report di oggi
 var todayReports=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d===oggi});
 var el=document.getElementById('listaOggi');
 if(!todayReports.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nessun report per oggi</p><p style="font-size:12px;margin-top:4px">Premi "+ Registra consegne" per iniziare</p></div>'}
 else{el.innerHTML=todayReports.map(function(r){return reportCard(r)}).join('')}
-
-// Report recenti (non oggi)
 var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d!==oggi}).slice(0,10);
 var el2=document.getElementById('listaRecenti');
 if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nessun report precedente</p></div>'}
 else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}}
 
-function reportCard(r){var h='<div class="report-card"><div class="report-top"><div class="report-filiale">Filiale '+(r.filiale||'?')+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+( r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
+function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var h='<div class="report-card">';if(ore<12){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">Filiale '+(r.filiale||'?')+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
 
-// RENDER COMPENSI
+async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports()}catch(e){showToast('Errore: '+e.message)}}
+
 function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]=0;mesi[m]+=(r.numConsegne||0)});
-// Add GAS data
 var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 if(!mesi[mcur])mesi[mcur]=0;mesi[mcur]+=(dp._gasConsegne||0);
 var sorted=Object.entries(mesi).sort(function(a,b){return b[0].localeCompare(a[0])});
@@ -239,10 +192,8 @@ var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo'
 if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nessun compenso</p></div>';return}
 el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],v=e[1]*cc;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+e[1]+' consegne</div></div><div class="comp-val">€'+v.toFixed(2)+'</div></div>'}).join('')}
 
-// RENDER PROFILO
 function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});tot+=(dp._gasConsegne||0);document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—'}
 
-// SALVA REPORT
 async function salvaReport(){var fil=document.getElementById('ncFiliale').value;var fas=document.getElementById('ncFascia').value;var num=parseInt(document.getElementById('ncNumero').value)||0;var note=document.getElementById('ncNote').value.trim();
 if(!fil){showToast('Seleziona la filiale');return}if(!num||num<1){showToast('Inserisci il numero di consegne');return}
 var now=new Date();var fd=fl.find(function(f){return String(f.codice)===fil});
@@ -253,7 +204,6 @@ await loadReports()}catch(e){showToast('Errore: '+e.message)}}
 
 function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block'}
 
-// NAV
 function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova()}
 
 function cn(c){return{CT:'Catania',ME:'Messina',EN:'Enna',SR:'Siracusa',PA:'Palermo'}[c]||c||'—'}
