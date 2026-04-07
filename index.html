@@ -336,8 +336,13 @@ function initDateLimits(){
     inp.min='2026-04-01';
 }
 
-async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{dp={cognome:email.split('@')[0].toUpperCase(),nome:'',citta:'??',contratto:'—'}}
-document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+dp.cognome+'!';
+async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{
+// Email non trovata in anagrafica — blocca accesso
+document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';
+var box=document.createElement('div');box.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
+box.innerHTML='<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">⚠️</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Profilo non trovato</div><div style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:20px">La tua email (<strong>'+email+'</strong>) non è registrata in anagrafica.<br>Contatta l\'amministrazione per essere abilitato.</div><button onclick="doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">← Esci</button></div>';
+document.body.appendChild(box);return}
+document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+(dp.nome||dp.cognome)+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';
 initDateLimits();
 await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();document.getElementById('targaView').style.display='flex'}
