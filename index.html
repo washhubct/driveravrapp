@@ -347,7 +347,7 @@ document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');doc
 initDateLimits();
 await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();document.getElementById('targaView').style.display='flex'}
 
-async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':f.codice)+' — '+(f.area||'');sel.appendChild(o)})}
+async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}
 
 async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
 try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
@@ -677,7 +677,7 @@ function resetRitorno(){
     var my=fl;
     if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}
     my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});
-    my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':f.codice)+' — '+(f.area||'');sel.appendChild(o)});
+    my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)});
 }
 
 async function salvaRitorno(){
@@ -767,7 +767,7 @@ function initSegFiliali(){
     var my=fl;
     if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}
     my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});
-    my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':f.codice)+' — '+(f.area||'');sel.appendChild(o)});
+    my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)});
 }
 
 async function inviaSegnalazione(){
