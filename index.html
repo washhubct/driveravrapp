@@ -59,6 +59,30 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .targa-display{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-top:10px}.targa-plate{font-size:15px;font-weight:800;letter-spacing:2px}.targa-change{font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline}
 .empty{text-align:center;padding:40px 20px;color:var(--text3)}.empty-icon{font-size:40px;margin-bottom:8px}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 8px 30px rgba(0,0,0,0.2);animation:toastIn .3s ease}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}}
+.profile-alert{position:fixed;inset:0;background:rgba(15,29,61,0.85);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:250;display:flex;align-items:center;justify-content:center;padding:24px}
+.profile-alert-card{background:var(--white);border-radius:20px;padding:32px 24px;width:100%;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)}
+.profile-alert-icon{font-size:48px;margin-bottom:8px}
+.profile-alert-title{font-size:18px;font-weight:800;color:var(--navy);margin-bottom:6px}
+.profile-alert-text{font-size:14px;color:var(--text2);line-height:1.6;margin-bottom:20px}
+.motiv-banner{background:linear-gradient(135deg,#1a2e5a 0%,#2563eb 100%);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;color:#fff;position:relative;overflow:hidden}
+.motiv-banner::after{content:'';position:absolute;right:-10px;top:-10px;width:80px;height:80px;background:rgba(255,255,255,0.06);border-radius:50%}
+.motiv-emoji{font-size:24px;margin-bottom:4px}
+.motiv-text{font-size:15px;font-weight:700;line-height:1.4}
+.motiv-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:4px}
+.leaderboard{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:20px}
+.lb-row{display:flex;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);gap:12px;transition:background .15s}
+.lb-row:last-child{border-bottom:none}
+.lb-row.me{background:var(--blue-bg)}
+.lb-pos{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0}
+.lb-pos.gold{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#78350f}
+.lb-pos.silver{background:linear-gradient(135deg,#94a3b8,#cbd5e1);color:#334155}
+.lb-pos.bronze{background:linear-gradient(135deg,#d97706,#f59e0b);color:#78350f}
+.lb-pos.normal{background:var(--bg);color:var(--text2)}
+.lb-nick{flex:1;font-size:14px;font-weight:600;color:var(--navy)}
+.lb-nick .lb-you{font-size:10px;font-weight:700;color:var(--blue);background:rgba(37,99,235,0.1);padding:2px 6px;border-radius:4px;margin-left:6px}
+.lb-score{font-size:16px;font-weight:800;color:var(--blue)}
+.lb-score span{font-size:11px;font-weight:500;color:var(--text3)}
+.lb-bonus{font-size:12px;margin-left:4px}
 .date-picker-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
 .date-picker-row input[type="date"]{flex:1;padding:14px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:15px;outline:none}
 .date-picker-row input[type="date"]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
@@ -99,10 +123,13 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div></header>
 <div class="app-body">
 <div id="tabOggi" class="screen active">
+<div id="motivationalBanner" class="motiv-banner"></div>
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseEuro">€0,00</div></div></div>
 <button class="btn btn-blue" onclick="showTab('nuova')" style="margin-bottom:20px;font-size:16px">+ Registra consegne</button>
 <div class="section-title">Report di oggi</div><div id="listaOggi"></div>
 <div class="section-title" style="margin-top:24px">Report recenti</div><div id="listaRecenti"></div>
+<div class="section-title" style="margin-top:24px">🏆 Classifica del mese</div>
+<div id="leaderboard" class="leaderboard"></div>
 </div>
 <div id="tabNuova" class="screen">
 <div id="formNuova">
@@ -129,14 +156,24 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-outline" onclick="showTab('oggi')">Torna alla home</button>
 </div></div>
 <div id="tabCompensi" class="screen">
-<div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Compenso mese corrente</div><div class="kpi-val" id="kCompenso">€0,00</div><div class="kpi-sub" id="kCompDetail">0 consegne × €3,50</div></div></div>
+<div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Compenso mese corrente</div><div class="kpi-val" id="kCompenso">€0,00</div><div class="kpi-sub" id="kCompDetail">0 consegne</div></div></div>
 <div class="section-title">Storico compensi</div><div id="listaCompensi"></div></div>
 <div id="tabProfilo" class="screen">
 <div class="prof-card">
 <div class="prof-name" id="profNome">—</div>
 <div class="prof-email" id="profEmail">—</div>
-<div class="prof-badges"><span class="prof-badge" id="profCitta">—</span><span class="prof-badge" id="profContratto">—</span><span class="prof-badge" id="profCosto">—</span></div>
+<div class="prof-badges"><span class="prof-badge" id="profCitta">—</span><span class="prof-badge" id="profContratto">—</span></div>
 <div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span class="targa-change" onclick="showTargaModal()">cambia</span></div>
+</div>
+<div class="section-title">I miei dati personali</div>
+<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
+<div class="form-group"><label class="form-label">Codice Fiscale</label><input type="text" id="profCF" class="input" placeholder="RSSMRA85M01H501Z" maxlength="16" style="text-transform:uppercase"></div>
+<div class="form-group"><label class="form-label">Numero Patente</label><input type="text" id="profPatente" class="input" placeholder="U1234567890" maxlength="12" style="text-transform:uppercase"></div>
+<div class="form-group"><label class="form-label">Scadenza Patente</label><input type="date" id="profPatenteScad" class="input"></div>
+<div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="profTelefono" class="input" placeholder="+39 333 1234567" inputmode="tel"></div>
+<div class="form-group"><label class="form-label">Data di Nascita</label><input type="date" id="profDataNascita" class="input"></div>
+<div class="form-group"><label class="form-label">Indirizzo di Residenza</label><input type="text" id="profIndirizzo" class="input" placeholder="Via Roma 1, 95100 Catania"></div>
+<button class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
 </div>
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div></div>
@@ -147,6 +184,15 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">💰</span>Compensi</button>
 <button class="nav-tab" onclick="showTab('profilo')" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
 </nav></div>
+<div id="profileAlert" class="profile-alert" style="display:none">
+<div class="profile-alert-card">
+<div class="profile-alert-icon">📋</div>
+<div class="profile-alert-title">Completa il tuo profilo</div>
+<div class="profile-alert-text">Per continuare ad usare l'app, inserisci i tuoi dati personali: codice fiscale, patente e telefono.</div>
+<button class="btn btn-blue" onclick="chiudiAlertProfilo()">Completa ora →</button>
+<button class="btn btn-outline" onclick="rimandaAlertProfilo()">Più tardi</button>
+</div>
+</div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -163,7 +209,9 @@ auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').s
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;showToast('Turno iniziato con '+targaOggi)}
+async function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+try{var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:auth.currentUser.email,targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}
+showToast('Turno iniziato con '+targaOggi);checkProfiloAlert()}
 
 // Imposta data di oggi nel campo data
 function setOggi(){document.getElementById('ncData').value=new Date().toISOString().slice(0,10)}
@@ -179,9 +227,9 @@ function initDateLimits(){
 
 async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{dp={cognome:email.split('@')[0].toUpperCase(),nome:'',citta:'??',contratto:'—'}}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+dp.cognome+'!';
-document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';document.getElementById('profCosto').textContent='€'+cc.toFixed(2)+'/consegna';
+document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';
 initDateLimits();
-await loadFl();await loadReports();document.getElementById('targaView').style.display='flex'}
+await loadFl();await loadReports();caricaDatiProfilo();document.getElementById('targaView').style.display='flex'}
 
 async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':f.codice)+' — '+(f.area||'');sel.appendChild(o)})}
 
@@ -202,7 +250,8 @@ else{el.innerHTML=todayReports.map(function(r){return reportCard(r)}).join('')}
 var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d!==oggi}).slice(0,20);
 var el2=document.getElementById('listaRecenti');
 if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nessun report precedente</p></div>'}
-else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}}
+else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}
+showMotivational();loadLeaderboard()}
 
 function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';if(ore<24){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
 
@@ -215,7 +264,7 @@ var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padSt
 if(!mesi[mcur])mesi[mcur]=0;mesi[mcur]+=(dp._gasConsegne||0);
 var sorted=Object.entries(mesi).sort(function(a,b){return b[0].localeCompare(a[0])});
 var ccur=mesi[mcur]||0;
-document.getElementById('kCompenso').textContent='€'+(ccur*cc).toFixed(2).replace('.',',');document.getElementById('kCompDetail').textContent=ccur+' consegne × €'+cc.toFixed(2);
+document.getElementById('kCompenso').textContent='€'+(ccur*cc).toFixed(2).replace('.',',');document.getElementById('kCompDetail').textContent=ccur+' consegne';
 var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
 if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nessun compenso</p></div>';return}
 el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],v=e[1]*cc;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+e[1]+' consegne</div></div><div class="comp-val">€'+v.toFixed(2)+'</div></div>'}).join('')}
@@ -271,6 +320,216 @@ function resetNuova(){document.getElementById('ncNumero').value='';document.getE
 function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova()}
 
 function cn(c){return{CT:'Catania',ME:'Messina',EN:'Enna',SR:'Siracusa',PA:'Palermo'}[c]||c||'—'}
+
+// Nicknames per classifica anonima
+var DRIVER_ANIMALS=['🦅 Aquila','🐆 Ghepardo','🚀 Razzo','⚡ Fulmine','🦁 Leone','🐺 Lupo','🏎️ Turbo','🔥 Fiamma','🦊 Volpe','💎 Diamante','🐻 Orso','🦈 Squalo','🎯 Freccia','🌊 Onda','⭐ Stella','🐉 Drago','🦅 Falco','🏔️ Everest','🌪️ Tornado','🐎 Mustang','🦬 Bisonte','🐗 Cinghiale','🦏 Rinoceronte','🦇 Pipistrello','🐊 Coccodrillo','🐻‍❄️ Polare','🐯 Tigre','🦚 Pavone','🐘 Elefante','🦩 Fenicottero'];
+
+function getNickname(driverName){
+    var hash=0;
+    for(var i=0;i<driverName.length;i++){hash=((hash<<5)-hash)+driverName.charCodeAt(i);hash|=0}
+    var idx=Math.abs(hash)%DRIVER_ANIMALS.length;
+    return DRIVER_ANIMALS[idx];
+}
+
+async function loadLeaderboard(){
+    var el=document.getElementById('leaderboard');
+    var now=new Date();
+    var meseCorrente=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+    var myName=(dp.cognome||'').toUpperCase();
+
+    try{
+        // Carica consegne del mese
+        var snap=await db.collection('reportDriver').where('mese','==',meseCorrente).get();
+        var driverConsegne={};
+        snap.forEach(function(doc){
+            var d=doc.data();
+            var drv=d.driver||'';
+            if(!drv)return;
+            if(!driverConsegne[drv])driverConsegne[drv]=0;
+            driverConsegne[drv]+=(d.numConsegne||0);
+        });
+
+        // Carica danni del mese
+        var danniSnap=await db.collection('danni').get();
+        var driverDanni={};
+        danniSnap.forEach(function(doc){
+            var d=doc.data();
+            if(d.stato==='annullato')return;
+            var m=d.mese||(d.data?d.data.substring(0,7):null);
+            if(m!==meseCorrente)return;
+            var drv=(d.driver||'').toUpperCase();
+            if(!drv)return;
+            if(!driverDanni[drv])driverDanni[drv]=0;
+            driverDanni[drv]++;
+        });
+
+        // Calcola punteggio: consegne + bonus zero danni - penalità danni
+        var driverScores={};
+        Object.keys(driverConsegne).forEach(function(drv){
+            var consegne=driverConsegne[drv];
+            var numDanni=driverDanni[drv]||0;
+            var score=consegne;
+            if(numDanni===0)score+=50; // Bonus zero danni
+            score-=(numDanni*30); // Penalità per danno
+            driverScores[drv]={score:Math.max(0,score),consegne:consegne,danni:numDanni,bonusZeroDanni:numDanni===0};
+        });
+
+        var sorted=Object.entries(driverScores).sort(function(a,b){return b[1].score-a[1].score});
+
+        if(sorted.length===0){
+            el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>Classifica non ancora disponibile</p></div>';
+            return;
+        }
+
+        var myPos=-1;
+        sorted.forEach(function(entry,i){if(entry[0]===myName)myPos=i});
+
+        var top10=sorted.slice(0,10);
+        var html='';
+        top10.forEach(function(entry,i){
+            var isMe=entry[0]===myName;
+            var posClass=i===0?'gold':i===1?'silver':i===2?'bronze':'normal';
+            var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+            var nick=getNickname(entry[0]);
+            var youTag=isMe?'<span class="lb-you">SEI TU!</span>':'';
+            var bonusTag=entry[1].bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
+
+            html+='<div class="lb-row'+(isMe?' me':'')+'">'+
+                '<div class="lb-pos '+posClass+'">'+medal+'</div>'+
+                '<div class="lb-nick">'+nick+bonusTag+youTag+'</div>'+
+                '<div class="lb-score">'+entry[1].score+' <span>punti</span></div>'+
+            '</div>';
+        });
+
+        if(myPos>=10){
+            var myData=sorted[myPos][1];
+            var myBonus=myData.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
+            html+='<div class="lb-row me" style="border-top:2px dashed var(--border)">'+
+                '<div class="lb-pos normal">'+(myPos+1)+'°</div>'+
+                '<div class="lb-nick">'+getNickname(myName)+myBonus+'<span class="lb-you">SEI TU!</span></div>'+
+                '<div class="lb-score">'+myData.score+' <span>punti</span></div>'+
+            '</div>';
+        }
+
+        // Legenda
+        html+='<div style="padding:10px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border)">'+
+            '1 consegna = 1 pt · 🛡️ Zero danni = +50 pt · Danno = -30 pt</div>';
+
+        el.innerHTML=html;
+    }catch(e){
+        el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Classifica in caricamento...</p></div>';
+    }
+}
+
+function showMotivational(){
+    var el=document.getElementById('motivationalBanner');
+    var oggi=new Date().toISOString().slice(0,10);
+    var consOggi=0,consMese=0;
+    reports.forEach(function(r){
+        var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);
+        if(d===oggi)consOggi+=(r.numConsegne||0);
+        var m=d.substring(0,7);
+        var ms=oggi.substring(0,7);
+        if(m===ms)consMese+=(r.numConsegne||0);
+    });
+
+    var hour=new Date().getHours();
+    var emoji,text,sub;
+
+    if(hour<10){
+        // Mattina presto
+        emoji='☀️';
+        text='Buona giornata '+(dp.nome||dp.cognome||'')+'!';
+        sub='Ogni consegna fa la differenza. Parti alla grande!';
+    }else if(consOggi===0){
+        emoji='🎯';
+        text='Nessuna consegna registrata oggi';
+        sub='Il primo passo è sempre il più importante. Inizia ora!';
+    }else if(consOggi>=20){
+        emoji='🔥';
+        text='Sei una macchina! '+consOggi+' consegne oggi!';
+        sub='Performance eccezionale. Continua così!';
+    }else if(consOggi>=10){
+        emoji='💪';
+        text='Ottimo lavoro! '+consOggi+' consegne e ancora in pista';
+        sub='Stai andando forte, non mollare!';
+    }else if(consOggi>=5){
+        emoji='👏';
+        text='Bel ritmo! '+consOggi+' consegne fatte';
+        sub='Ogni consegna ti avvicina alla vetta della classifica';
+    }else{
+        emoji='🚀';
+        text=consOggi+' consegne registrate oggi';
+        sub='Hai iniziato bene, continua su questa strada!';
+    }
+
+    if(consMese>=200){
+        emoji='🏆';text='Mese da campione! '+consMese+' consegne totali';
+        sub='Sei tra i migliori del team. Fenomenale!';
+    }
+
+    el.innerHTML='<div class="motiv-emoji">'+emoji+'</div><div class="motiv-text">'+text+'</div><div class="motiv-sub">'+sub+'</div>';
+}
+
+function profiloCompleto(){
+    if(!dp)return true;
+    return dp.codiceFiscale && dp.numeroPatente && dp.telefono;
+}
+
+function checkProfiloAlert(){
+    if(!profiloCompleto()){
+        document.getElementById('profileAlert').style.display='flex';
+    }
+}
+
+function chiudiAlertProfilo(){
+    document.getElementById('profileAlert').style.display='none';
+    showTab('profilo');
+}
+
+function rimandaAlertProfilo(){
+    document.getElementById('profileAlert').style.display='none';
+}
+
+function caricaDatiProfilo(){
+    if(!dp)return;
+    document.getElementById('profCF').value=dp.codiceFiscale||'';
+    document.getElementById('profPatente').value=dp.numeroPatente||'';
+    document.getElementById('profPatenteScad').value=dp.scadenzaPatente||'';
+    document.getElementById('profTelefono').value=dp.telefono||'';
+    document.getElementById('profDataNascita').value=dp.dataNascita||'';
+    document.getElementById('profIndirizzo').value=dp.indirizzo||'';
+}
+
+async function salvaProfilo(){
+    if(!dp||!dp.id){showToast('Errore: profilo non trovato');return}
+    var cf=document.getElementById('profCF').value.trim().toUpperCase();
+    var pat=document.getElementById('profPatente').value.trim().toUpperCase();
+    var patScad=document.getElementById('profPatenteScad').value;
+    var tel=document.getElementById('profTelefono').value.trim();
+    var nascita=document.getElementById('profDataNascita').value;
+    var indirizzo=document.getElementById('profIndirizzo').value.trim();
+
+    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');return}
+    if(!pat){showToast('Inserisci il numero della patente');return}
+    if(!tel){showToast('Inserisci il numero di telefono');return}
+
+    try{
+        await db.collection('driverAnagrafica').doc(dp.id).update({
+            codiceFiscale:cf,
+            numeroPatente:pat,
+            scadenzaPatente:patScad||null,
+            telefono:tel,
+            dataNascita:nascita||null,
+            indirizzo:indirizzo||null,
+            profiloCompletatoIl:firebase.firestore.FieldValue.serverTimestamp()
+        });
+        dp.codiceFiscale=cf;dp.numeroPatente=pat;dp.scadenzaPatente=patScad;
+        dp.telefono=tel;dp.dataNascita=nascita;dp.indirizzo=indirizzo;
+        showToast('Dati salvati con successo!');
+    }catch(e){showToast('Errore: '+e.message)}
+}
+
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
 </script>
 </body></html>
