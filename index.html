@@ -322,7 +322,9 @@ document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.k
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
 async function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
 try{var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:auth.currentUser.email,targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}
-showToast('Turno iniziato con '+targaOggi);checkProfiloAlert()}
+showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
+// Auto-logout alle 01:00
+var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
 
 // Imposta data di oggi nel campo data
 function setOggi(){document.getElementById('ncData').value=new Date().toISOString().slice(0,10)}
