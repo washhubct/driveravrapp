@@ -195,12 +195,16 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="form-group"><label class="form-label">Nome cliente</label>
 <input type="text" id="rtCliente" class="input" placeholder="Nome del cliente"></div>
 <div class="form-group"><label class="form-label">Indirizzo</label>
-<input type="text" id="rtIndirizzo" class="input" placeholder="Indirizzo del cliente"></div>
+<input type="text" id="rtIndirizzo" class="input" placeholder="Via e numero civico"></div>
 <div class="form-group"><label class="form-label">Città</label>
-<input type="text" id="rtCitta" class="input" placeholder="Città"></div>
-<div class="form-group"><label class="form-label">Numero ritorni</label>
-<input type="number" id="rtNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="20">
-<div class="num-hint">Quanti ritorni hai effettuato per questa filiale</div></div>
+<select id="rtCitta" class="input">
+<option value="">Seleziona città...</option>
+<option value="Catania">Catania</option>
+<option value="Siracusa">Siracusa</option>
+<option value="Enna">Enna</option>
+<option value="Messina">Messina</option>
+<option value="Palermo">Palermo</option>
+</select></div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label>
 <input type="text" id="rtNote" class="input" placeholder="Dettagli aggiuntivi..."></div>
 <button class="btn" onclick="salvaRitorno()" style="font-size:16px;background:var(--warning);color:#fff;border-color:var(--warning)">✓ Conferma ritorno</button>
@@ -646,13 +650,12 @@ async function loadRitorni(){
     var dn=(dp.cognome||'').toUpperCase();
     if(!dn)return;
     try{
-        var s=await db.collection('ritorni').where('driver','==',dn).orderBy('timestamp','desc').limit(100).get();
+        var s=await db.collection('ritorni').where('driver','==',dn).limit(100).get();
         ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});
     }catch(e){ritorniList=[]}
 }
 
 function resetRitorno(){
-    document.getElementById('rtNumero').value='';
     document.getElementById('rtCliente').value='';
     document.getElementById('rtIndirizzo').value='';
     document.getElementById('rtCitta').value='';
@@ -660,11 +663,9 @@ function resetRitorno(){
     document.getElementById('rtMotivo').value='';
     document.getElementById('formRitorno').style.display='block';
     document.getElementById('rtSuccess').style.display='none';
-    // Init date
     var inp=document.getElementById('rtData');
     var oggi=new Date().toISOString().slice(0,10);
     inp.value=oggi;inp.max=oggi;inp.min='2026-04-01';
-    // Init filiali dropdown
     var sel=document.getElementById('rtFiliale');
     sel.innerHTML='<option value="">Seleziona filiale...</option>';
     var my=fl;
@@ -679,14 +680,14 @@ async function salvaRitorno(){
     var motivo=document.getElementById('rtMotivo').value;
     var cliente=document.getElementById('rtCliente').value.trim();
     var indirizzo=document.getElementById('rtIndirizzo').value.trim();
-    var citta=document.getElementById('rtCitta').value.trim();
-    var num=parseInt(document.getElementById('rtNumero').value)||0;
+    var citta=document.getElementById('rtCitta').value;
     var note=document.getElementById('rtNote').value.trim();
 
     if(!dataStr){showToast('Seleziona la data');return}
     if(!filiale){showToast('Seleziona la filiale');return}
     if(!motivo){showToast('Seleziona il motivo');return}
-    if(!num||num<1){showToast('Inserisci il numero di ritorni');return}
+    if(!cliente){showToast('Inserisci il nome del cliente');return}
+    if(!citta){showToast('Seleziona la città');return}
 
     var selDate=new Date(dataStr+'T12:00:00');
     var minDate=new Date('2026-04-01T00:00:00');
@@ -710,18 +711,18 @@ async function salvaRitorno(){
         filialeNome:filialeNome,
         motivo:motivo,
         motivoLabel:motivoLabels[motivo]||motivo,
-        numRitorni:num,
-        cliente:cliente||null,
+        numRitorni:1,
+        cliente:cliente,
         indirizzo:indirizzo||null,
-        citta:citta||null,
+        citta:citta,
         note:note||null,
         driver:(dp.cognome||'').toUpperCase(),
         driverNome:(dp.cognome||'')+' '+(dp.nome||''),
         driverEmail:auth.currentUser.email,
         targa:targaOggi,
         area:fd?fd.area:(dp.citta||'??'),
-        costoFattura:num*6.90,
-        costoDriver:num*cc,
+        costoFattura:6.90,
+        costoDriver:cc,
         stato:'da_fatturare',
         data:firebase.firestore.Timestamp.fromDate(selDate),
         mese:selDate.getFullYear()+'-'+String(selDate.getMonth()+1).padStart(2,'0'),
@@ -732,7 +733,7 @@ async function salvaRitorno(){
     try{
         await db.collection('ritorni').add(rec);
         var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
-        document.getElementById('rtSuccessDetail').textContent=num+' ritorn'+(num===1?'o':'i')+' · '+(filialeNome||'Filiale '+filiale)+' · '+dataLabel+' · '+(motivoLabels[motivo]||motivo);
+        document.getElementById('rtSuccessDetail').textContent='Ritorno per '+cliente+' · '+(filialeNome||'Filiale '+filiale)+' · '+dataLabel;
         document.getElementById('formRitorno').style.display='none';
         document.getElementById('rtSuccess').style.display='block';
         await loadRitorni();
