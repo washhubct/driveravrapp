@@ -59,6 +59,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .targa-display{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.08);border-radius:8px;padding:8px 12px;margin-top:10px}.targa-plate{font-size:15px;font-weight:800;letter-spacing:2px}.targa-change{font-size:11px;color:rgba(255,255,255,0.5);cursor:pointer;text-decoration:underline}
 .empty{text-align:center;padding:40px 20px;color:var(--text3)}.empty-icon{font-size:40px;margin-bottom:8px}
 .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--navy);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;z-index:300;box-shadow:0 8px 30px rgba(0,0,0,0.2);animation:toastIn .3s ease}@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(20px)}}
+.date-picker-row{display:flex;gap:8px;align-items:center;margin-bottom:4px}
+.date-picker-row input[type="date"]{flex:1;padding:14px 16px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-family:var(--font);font-size:15px;outline:none}
+.date-picker-row input[type="date"]:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,0.1)}
+.date-hint{font-size:12px;color:var(--text3);margin-bottom:16px}
+.date-today-btn{padding:14px 16px;background:var(--blue-bg);border:1.5px solid rgba(37,99,235,0.2);border-radius:10px;color:var(--blue);font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap}
+.date-today-btn:active{background:rgba(37,99,235,0.15)}
 </style>
 </head>
 <body>
@@ -101,6 +107,13 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div id="tabNuova" class="screen">
 <div id="formNuova">
 <div class="section-title">Registra consegne per fascia</div>
+<div class="form-group"><label class="form-label">Data consegna</label>
+<div class="date-picker-row">
+<input type="date" id="ncData" class="input" style="margin-bottom:0">
+<button type="button" class="date-today-btn" onclick="setOggi()">Oggi</button>
+</div>
+<div class="date-hint">Puoi inserire consegne dal 1° aprile ad oggi</div>
+</div>
 <div class="form-group"><label class="form-label">Filiale</label><select id="ncFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
 <div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
 <div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="50"><div class="num-hint">Inserisci il numero di ordini consegnati in questa fascia</div></div>
@@ -152,12 +165,25 @@ document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.k
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
 function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;showToast('Turno iniziato con '+targaOggi)}
 
+// Imposta data di oggi nel campo data
+function setOggi(){document.getElementById('ncData').value=new Date().toISOString().slice(0,10)}
+
+// Inizializza limiti data (dal 1 aprile a oggi)
+function initDateLimits(){
+    var inp=document.getElementById('ncData');
+    var oggi=new Date().toISOString().slice(0,10);
+    inp.value=oggi;
+    inp.max=oggi;
+    inp.min='2026-04-01';
+}
+
 async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{dp={cognome:email.split('@')[0].toUpperCase(),nome:'',citta:'??',contratto:'—'}}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+dp.cognome+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';document.getElementById('profCosto').textContent='€'+cc.toFixed(2)+'/consegna';
+initDateLimits();
 await loadFl();await loadReports();document.getElementById('targaView').style.display='flex'}
 
-async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){return(a.codice||0)-(b.codice||0)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.codice+(f.nome?' — '+f.nome:'')+' ('+(f.area||'')+')';sel.appendChild(o)})}
+async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=(f.nome?f.nome+' ('+f.codice+')':f.codice)+' — '+(f.area||'');sel.appendChild(o)})}
 
 async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
 try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
@@ -173,12 +199,14 @@ var todayReports=reports.filter(function(r){var d=r.data instanceof Date?r.data.
 var el=document.getElementById('listaOggi');
 if(!todayReports.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nessun report per oggi</p><p style="font-size:12px;margin-top:4px">Premi "+ Registra consegne" per iniziare</p></div>'}
 else{el.innerHTML=todayReports.map(function(r){return reportCard(r)}).join('')}
-var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d!==oggi}).slice(0,10);
+var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d!==oggi}).slice(0,20);
 var el2=document.getElementById('listaRecenti');
 if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nessun report precedente</p></div>'}
 else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}}
 
-function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var h='<div class="report-card">';if(ore<12){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">Filiale '+(r.filiale||'?')+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
+function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';if(ore<24){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
+
+function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
 async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports()}catch(e){showToast('Errore: '+e.message)}}
 
@@ -194,15 +222,51 @@ el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]
 
 function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});tot+=(dp._gasConsegne||0);document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—'}
 
-async function salvaReport(){var fil=document.getElementById('ncFiliale').value;var fas=document.getElementById('ncFascia').value;var num=parseInt(document.getElementById('ncNumero').value)||0;var note=document.getElementById('ncNote').value.trim();
-if(!fil){showToast('Seleziona la filiale');return}if(!num||num<1){showToast('Inserisci il numero di consegne');return}
-var now=new Date();var fd=fl.find(function(f){return String(f.codice)===fil});
-var rec={filiale:fil,fascia:fas,numConsegne:num,note:note,driver:(dp.cognome||'').toUpperCase(),driverEmail:auth.currentUser.email,targa:targaOggi,data:firebase.firestore.Timestamp.fromDate(now),mese:now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0'),area:fd?fd.area:(dp.citta||'??'),fonte:'driver_app',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-try{await db.collection('reportDriver').add(rec);
-document.getElementById('successDetail').textContent=num+' consegne · Filiale '+fil+' · Fascia '+fas;document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
-await loadReports()}catch(e){showToast('Errore: '+e.message)}}
+async function salvaReport(){
+    var dataStr=document.getElementById('ncData').value;
+    var fil=document.getElementById('ncFiliale').value;
+    var fas=document.getElementById('ncFascia').value;
+    var num=parseInt(document.getElementById('ncNumero').value)||0;
+    var note=document.getElementById('ncNote').value.trim();
 
-function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block'}
+    if(!dataStr){showToast('Seleziona la data');return}
+    if(!fil){showToast('Seleziona la filiale');return}
+    if(!num||num<1){showToast('Inserisci il numero di consegne');return}
+
+    // Validazione data: non prima del 1 aprile, non dopo oggi
+    var selDate=new Date(dataStr+'T12:00:00');
+    var minDate=new Date('2026-04-01T00:00:00');
+    var maxDate=new Date();maxDate.setHours(23,59,59);
+    if(selDate<minDate){showToast('Non puoi inserire prima del 1° aprile');return}
+    if(selDate>maxDate){showToast('Non puoi inserire date future');return}
+
+    var fd=fl.find(function(f){return String(f.codice)===fil});
+    var filialeNome=fd&&fd.nome?fd.nome:'';
+
+    var rec={
+        filiale:fil,
+        filialeNome:filialeNome,
+        fascia:fas,
+        numConsegne:num,
+        note:note,
+        driver:(dp.cognome||'').toUpperCase(),
+        driverEmail:auth.currentUser.email,
+        targa:targaOggi,
+        data:firebase.firestore.Timestamp.fromDate(selDate),
+        mese:selDate.getFullYear()+'-'+String(selDate.getMonth()+1).padStart(2,'0'),
+        area:fd?fd.area:(dp.citta||'??'),
+        fonte:'driver_app',
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    try{await db.collection('reportDriver').add(rec);
+    var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
+    document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
+    document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
+    await loadReports()}catch(e){showToast('Errore: '+e.message)}
+}
+
+function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
 
 function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova()}
 
