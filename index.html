@@ -141,8 +141,6 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-blue" onclick="showTab('nuova')" style="margin-bottom:20px;font-size:16px">+ Registra consegne</button>
 <div class="section-title">Report di oggi</div><div id="listaOggi"></div>
 <div class="section-title" style="margin-top:24px">Report recenti</div><div id="listaRecenti"></div>
-<div class="section-title" style="margin-top:24px">🏆 Classifica del mese</div>
-<div id="leaderboard" class="leaderboard"></div>
 </div>
 <div id="tabNuova" class="screen">
 <div id="formNuova">
@@ -189,7 +187,10 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
 </div>
 <div class="section-title">Le mie statistiche</div>
-<div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div></div>
+<div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div>
+<div class="section-title" style="margin-top:20px">🏆 Classifica del mese</div>
+<div id="leaderboard" class="leaderboard"></div>
+</div>
 <div id="tabSegnala" class="screen">
 <div class="section-title">Nuova segnalazione</div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
@@ -309,7 +310,7 @@ var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISO
 var el2=document.getElementById('listaRecenti');
 if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nessun report precedente</p></div>'}
 else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}
-showMotivational();loadLeaderboard()}
+showMotivational()}
 
 function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';if(ore<24){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
 
@@ -327,7 +328,7 @@ var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo'
 if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nessun compenso</p></div>';return}
 el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],v=e[1]*cc;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+e[1]+' consegne</div></div><div class="comp-val">€'+v.toFixed(2)+'</div></div>'}).join('')}
 
-function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});tot+=(dp._gasConsegne||0);document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—'}
+function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});tot+=(dp._gasConsegne||0);document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
 
 async function salvaReport(){
     var dataStr=document.getElementById('ncData').value;
