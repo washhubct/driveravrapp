@@ -342,22 +342,12 @@ async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map
 
 async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
 try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
-// Conta consegne GAS (Decò) PER MESE
-try{var s2=await db.collection('consegne').where('driver','>=',dn).where('driver','<=',dn+'\uf8ff').orderBy('driver').limit(5000).get();
-dp._gasPerMese={};
-s2.docs.forEach(function(d){var x=d.data();
-var dt=x.data;if(dt&&dt.toDate)dt=dt.toDate();else if(typeof dt==='string')dt=new Date(dt);else if(!(dt instanceof Date))return;
-var m=dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0');
-if(!dp._gasPerMese[m])dp._gasPerMese[m]=0;
-dp._gasPerMese[m]++});
-}catch(e){dp._gasPerMese={}}
 rOggi();rComp();rProf()}
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
 var consOggi=0,consMese=0,ritorniMese=0;
 reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
 ritorniList.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.toISOString().slice(0,7);if(m===ms)ritorniMese+=(r.numRitorni||0)});
-consMese+=((dp._gasPerMese||{})[ms]||0);
 document.getElementById('kOggi').textContent=consOggi;document.getElementById('kMese').textContent=consMese;document.getElementById('kMeseEuro').textContent='€'+(consMese*cc).toFixed(2).replace('.',',');
 document.getElementById('kRitorni').textContent=ritorniMese;
 var todayReports=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d===oggi});
@@ -370,16 +360,13 @@ if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">�
 else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}
 showMotivational()}
 
-function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';if(ore<24){h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>'}h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
+function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
 async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports()}catch(e){showToast('Errore: '+e.message)}}
 
 function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]=0;mesi[m]+=(r.numConsegne||0)});
-// Aggiungi consegne GAS per ogni mese
-var gasPerMese=dp._gasPerMese||{};
-Object.keys(gasPerMese).forEach(function(m){if(!mesi[m])mesi[m]=0;mesi[m]+=gasPerMese[m]});
 var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
 if(!mesi[mcur])mesi[mcur]=0;
 var sorted=Object.entries(mesi).sort(function(a,b){return b[0].localeCompare(a[0])});
@@ -389,7 +376,7 @@ var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo'
 if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nessun compenso</p></div>';return}
 el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],v=e[1]*cc;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+e[1]+' consegne</div></div><div class="comp-val">€'+v.toFixed(2)+'</div></div>'}).join('')}
 
-function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});var gasPerMese=dp._gasPerMese||{};Object.values(gasPerMese).forEach(function(v){tot+=v});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
+function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
 
 async function salvaReport(){
     var dataStr=document.getElementById('ncData').value;
