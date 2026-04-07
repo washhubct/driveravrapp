@@ -158,7 +158,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div>
 <div class="form-group"><label class="form-label">Filiale</label><select id="ncFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
 <div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
-<div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="50"><div class="num-hint">Inserisci il numero di ordini consegnati in questa fascia</div></div>
+<div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="10"><div class="num-hint">Massimo 10 consegne per fascia</div></div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label><input type="text" id="ncNote" class="input" placeholder="Problemi, ritardi, segnalazioni..."></div>
 <button class="btn btn-success" onclick="salvaReport()" style="font-size:16px">✓ Conferma consegne</button>
 <button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
@@ -397,6 +397,7 @@ async function salvaReport(){
     if(!dataStr){showToast('Seleziona la data');return}
     if(!fil){showToast('Seleziona la filiale');return}
     if(!num||num<1){showToast('Inserisci il numero di consegne');return}
+    if(num>10){showToast('Massimo 10 consegne per fascia');return}
 
     // Validazione data: non prima del 1 aprile, non dopo oggi
     var selDate=new Date(dataStr+'T12:00:00');
