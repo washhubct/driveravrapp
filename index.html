@@ -380,7 +380,7 @@ function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:n
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
-async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports()}catch(e){showToast('Errore: '+e.message)}}
+async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}}
 
 async function eliminaRitorno(id){if(!confirm('Vuoi eliminare questo ritorno?'))return;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Errore: '+e.message)}}
 
@@ -438,7 +438,7 @@ async function salvaReport(){
     var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
     document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
     document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
-    await loadReports()}catch(e){showToast('Errore: '+e.message)}
+    await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}
 }
 
 function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
@@ -751,7 +751,7 @@ async function salvaRitorno(){
         document.getElementById('rtSuccessDetail').textContent='Ritorno per '+cliente+' · '+(filialeNome||'Filiale '+filiale)+' · '+dataLabel;
         document.getElementById('formRitorno').style.display='none';
         document.getElementById('rtSuccess').style.display='block';
-        await loadRitorni();
+        await loadRitorni();rOggi();
         showToast('Ritorno registrato');
     }catch(e){showToast('Errore: '+e.message)}
 }
