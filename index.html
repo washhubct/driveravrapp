@@ -348,13 +348,13 @@ document.body.appendChild(box);return}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+(dp.nome||dp.cognome)+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';
 initDateLimits();
-await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();document.getElementById('targaView').style.display='flex'}
+await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi();rComp();rProf();document.getElementById('targaView').style.display='flex'}
 
 async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}
 
 async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
 try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
-rOggi();rComp();rProf()}
+}
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
 var consOggi=0,consMese=0,ritorniMese=0;
