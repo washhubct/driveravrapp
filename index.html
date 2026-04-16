@@ -317,7 +317,9 @@ function showReset(){document.getElementById('loginMain').classList.add('hidden'
 function hideReset(){document.getElementById('loginMain').classList.remove('hidden');document.getElementById('resetWrap').classList.remove('active')}
 function doReset(){var e=document.getElementById('resetEmail').value.trim(),m=document.getElementById('resetMsg');if(!e){m.textContent='Inserisci la tua email';return}auth.sendPasswordResetEmail(e).then(function(){m.style.color='#16a34a';m.textContent='Email inviata! Controlla la posta.'}).catch(function(r){m.style.color='#dc2626';m.textContent='Errore: '+r.message})}
 function doLogout(){targaOggi='';auth.signOut()}
-auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
+// Log accesso driver su Firestore (visibile in Dashboard > Log Accessi)
+async function logAccessoDriver(user){try{var ua=navigator.userAgent||'';await db.collection('driverAccessLog').add({email:user.email,uid:user.uid,ruolo:'driver',piattaforma:'app-driver',dispositivo:/Mobile|Android|iPhone|iPad/i.test(ua)?'Mobile':'Desktop',browser:ua.length>120?ua.substring(0,120):ua,timestamp:firebase.firestore.FieldValue.serverTimestamp(),data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})})}catch(e){console.warn('Errore log accesso:',e.message)}}
+auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';logAccessoDriver(u);init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
