@@ -354,8 +354,8 @@ await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi
 
 async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}
 
-async function loadReports(){var dn=(dp.cognome||'').toUpperCase();if(!dn)return;
-try{var s=await db.collection('reportDriver').where('driver','==',dn).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
+async function loadReports(){var em=auth.currentUser&&auth.currentUser.email;if(!em)return;
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
 }
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
@@ -664,10 +664,10 @@ function showToast(m){var e=document.createElement('div');e.className='toast';e.
 var ritorniList=[];
 
 async function loadRitorni(){
-    var dn=(dp.cognome||'').toUpperCase();
-    if(!dn)return;
+    var em=auth.currentUser&&auth.currentUser.email;
+    if(!em)return;
     try{
-        var s=await db.collection('ritorni').where('driver','==',dn).limit(100).get();
+        var s=await db.collection('ritorni').where('driverEmail','==',em).limit(100).get();
         ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});
     }catch(e){ritorniList=[]}
 }
@@ -846,9 +846,9 @@ function resetSegnala(){
 
 async function loadSegnalazioni(){
     var el=document.getElementById('listaSegnalazioni');
-    var myName=(dp.cognome||'').toUpperCase();
+    var em=auth.currentUser&&auth.currentUser.email;
     try{
-        var snap=await db.collection('segnalazioni').where('driver','==',myName).limit(20).get();
+        var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(20).get();
         if(snap.empty){
             el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">✅</div><p>Nessuna segnalazione</p></div>';
             return;
