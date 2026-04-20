@@ -324,7 +324,7 @@ document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.k
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
 async function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
-try{var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:auth.currentUser.email,targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}
+try{var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
 var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
@@ -354,8 +354,8 @@ await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi
 
 async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}
 
-async function loadReports(){var em=auth.currentUser&&auth.currentUser.email;if(!em)return;
-try{var s=await db.collection('reportDriver').where('driverEmail','==',em).orderBy('data','desc').limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){reports=[]}
+async function loadReports(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Errore caricamento consegne: '+e.message)}
 }
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
@@ -427,7 +427,7 @@ async function salvaReport(){
         numConsegne:num,
         note:note,
         driver:(dp.cognome||'').toUpperCase(),
-        driverEmail:auth.currentUser.email,
+        driverEmail:(auth.currentUser.email||'').toLowerCase(),
         targa:targaOggi,
         data:firebase.firestore.Timestamp.fromDate(selDate),
         mese:selDate.getFullYear()+'-'+String(selDate.getMonth()+1).padStart(2,'0'),
@@ -440,7 +440,7 @@ async function salvaReport(){
     var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
     document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
     document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
-    await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}
+    await loadReports();rOggi();rComp()}catch(e){console.error('salvaReport error:',e);showToast('Errore: '+e.message)}
 }
 
 function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
@@ -664,12 +664,12 @@ function showToast(m){var e=document.createElement('div');e.className='toast';e.
 var ritorniList=[];
 
 async function loadRitorni(){
-    var em=auth.currentUser&&auth.currentUser.email;
+    var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
     if(!em)return;
     try{
         var s=await db.collection('ritorni').where('driverEmail','==',em).limit(100).get();
         ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});
-    }catch(e){ritorniList=[]}
+    }catch(e){console.error('loadRitorni error:',e);ritorniList=[]}
 }
 
 function resetRitorno(){
@@ -735,7 +735,7 @@ async function salvaRitorno(){
         note:note||null,
         driver:(dp.cognome||'').toUpperCase(),
         driverNome:(dp.cognome||'')+' '+(dp.nome||''),
-        driverEmail:auth.currentUser.email,
+        driverEmail:(auth.currentUser.email||'').toLowerCase(),
         targa:targaOggi,
         area:fd?fd.area:(dp.citta||'??'),
         costoFattura:6.90,
@@ -755,7 +755,7 @@ async function salvaRitorno(){
         document.getElementById('rtSuccess').style.display='block';
         await loadRitorni();rOggi();
         showToast('Ritorno registrato');
-    }catch(e){showToast('Errore: '+e.message)}
+    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+e.message)}
 }
 
 // === SEGNALAZIONI ===
@@ -814,7 +814,7 @@ async function inviaSegnalazione(){
         foto:fotoBase64||null,
         driver:(dp.cognome||'').toUpperCase(),
         driverNome:(dp.cognome||'')+' '+(dp.nome||''),
-        driverEmail:auth.currentUser.email,
+        driverEmail:(auth.currentUser.email||'').toLowerCase(),
         targa:targaOggi,
         area:dp.citta||'??',
         stato:'aperta',
@@ -828,7 +828,7 @@ async function inviaSegnalazione(){
         document.getElementById('segSuccess').style.display='block';
         await loadSegnalazioni();
         showToast('Segnalazione inviata');
-    }catch(e){showToast('Errore: '+e.message)}
+    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+e.message)}
 }
 
 function resetSegnala(){
@@ -846,7 +846,7 @@ function resetSegnala(){
 
 async function loadSegnalazioni(){
     var el=document.getElementById('listaSegnalazioni');
-    var em=auth.currentUser&&auth.currentUser.email;
+    var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
     try{
         var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(20).get();
         if(snap.empty){
