@@ -466,71 +466,39 @@ async function loadLeaderboard(){
     var myName=(dp.cognome||'').toUpperCase();
 
     try{
-        // Carica consegne del mese
-        var snap=await db.collection('reportDriver').where('mese','==',meseCorrente).get();
-        var driverConsegne={};
-        snap.forEach(function(doc){
-            var d=doc.data();
-            var drv=d.driver||'';
-            if(!drv)return;
-            if(!driverConsegne[drv])driverConsegne[drv]=0;
-            driverConsegne[drv]+=(d.numConsegne||0);
-        });
-
-        // Carica danni del mese
-        var danniSnap=await db.collection('danni').get();
-        var driverDanni={};
-        danniSnap.forEach(function(doc){
-            var d=doc.data();
-            if(d.stato==='annullato')return;
-            var m=d.mese||(d.data?d.data.substring(0,7):null);
-            if(m!==meseCorrente)return;
-            var drv=(d.driver||'').toUpperCase();
-            if(!drv)return;
-            if(!driverDanni[drv])driverDanni[drv]=0;
-            driverDanni[drv]++;
-        });
-
-        // Calcola punteggio: consegne + bonus zero danni - penalità danni
-        var driverScores={};
-        Object.keys(driverConsegne).forEach(function(drv){
-            var consegne=driverConsegne[drv];
-            var numDanni=driverDanni[drv]||0;
-            var score=consegne;
-            if(numDanni===0)score+=50; // Bonus zero danni
-            score-=(numDanni*30); // Penalità per danno
-            driverScores[drv]={score:Math.max(0,score),consegne:consegne,danni:numDanni,bonusZeroDanni:numDanni===0};
-        });
-
-        var sorted=Object.entries(driverScores).sort(function(a,b){return b[1].score-a[1].score});
-
+        var doc=await db.collection('leaderboard').doc(meseCorrente).get();
+        if(!doc.exists){
+            el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>Classifica non ancora disponibile</p></div>';
+            return;
+        }
+        var sorted=(doc.data().drivers||[]);
         if(sorted.length===0){
             el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>Classifica non ancora disponibile</p></div>';
             return;
         }
 
         var myPos=-1;
-        sorted.forEach(function(entry,i){if(entry[0]===myName)myPos=i});
+        sorted.forEach(function(entry,i){if(entry.driver===myName)myPos=i});
 
         var top10=sorted.slice(0,10);
         var html='';
         top10.forEach(function(entry,i){
-            var isMe=entry[0]===myName;
+            var isMe=entry.driver===myName;
             var posClass=i===0?'gold':i===1?'silver':i===2?'bronze':'normal';
             var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
-            var nick=getNickname(entry[0]);
+            var nick=getNickname(entry.driver);
             var youTag=isMe?'<span class="lb-you">SEI TU!</span>':'';
-            var bonusTag=entry[1].bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
+            var bonusTag=entry.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
 
             html+='<div class="lb-row'+(isMe?' me':'')+'">'+
                 '<div class="lb-pos '+posClass+'">'+medal+'</div>'+
                 '<div class="lb-nick">'+nick+bonusTag+youTag+'</div>'+
-                '<div class="lb-score">'+entry[1].score+' <span>punti</span></div>'+
+                '<div class="lb-score">'+entry.score+' <span>punti</span></div>'+
             '</div>';
         });
 
         if(myPos>=10){
-            var myData=sorted[myPos][1];
+            var myData=sorted[myPos];
             var myBonus=myData.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
             html+='<div class="lb-row me" style="border-top:2px dashed var(--border)">'+
                 '<div class="lb-pos normal">'+(myPos+1)+'°</div>'+
@@ -539,13 +507,13 @@ async function loadLeaderboard(){
             '</div>';
         }
 
-        // Legenda
         html+='<div style="padding:10px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border)">'+
             '1 consegna = 1 pt · 🛡️ Zero danni = +50 pt · Danno = -30 pt</div>';
 
         el.innerHTML=html;
     }catch(e){
-        el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Classifica in caricamento...</p></div>';
+        console.warn('Leaderboard load:',e.message);
+        el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Classifica non disponibile</p></div>';
     }
 }
 
