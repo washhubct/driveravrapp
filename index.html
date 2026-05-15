@@ -323,8 +323,8 @@ auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').s
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-async function confermaTarga(){var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
-try{var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+try{submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()})}catch(e){console.warn('Errore salvataggio turno:',e.message)}finally{submitting=false}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
 var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
@@ -382,9 +382,9 @@ function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:n
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
-async function eliminaReport(id){if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}}
+async function eliminaReport(id){if(!auth.currentUser)return;if(!confirm('Vuoi eliminare questo report?'))return;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}}
 
-async function eliminaRitorno(id){if(!confirm('Vuoi eliminare questo ritorno?'))return;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Errore: '+e.message)}}
+async function eliminaRitorno(id){if(!auth.currentUser)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Errore: '+e.message)}}
 
 function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]=0;mesi[m]+=(r.numConsegne||0)});
 var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
@@ -606,7 +606,10 @@ function caricaDatiProfilo(){
 }
 
 async function salvaProfilo(){
+    if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(!dp||!dp.id){showToast('Errore: profilo non trovato');return}
+    if(submitting)return;
+    submitting=true;
     var cf=document.getElementById('profCF').value.trim().toUpperCase();
     var pat=document.getElementById('profPatente').value.trim().toUpperCase();
     var patScad=document.getElementById('profPatenteScad').value;
@@ -614,9 +617,9 @@ async function salvaProfilo(){
     var nascita=document.getElementById('profDataNascita').value;
     var indirizzo=document.getElementById('profIndirizzo').value.trim();
 
-    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');return}
-    if(!pat){showToast('Inserisci il numero della patente');return}
-    if(!tel){showToast('Inserisci il numero di telefono');return}
+    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');submitting=false;return}
+    if(!pat){showToast('Inserisci il numero della patente');submitting=false;return}
+    if(!tel){showToast('Inserisci il numero di telefono');submitting=false;return}
 
     try{
         await db.collection('driverAnagrafica').doc(dp.id).update({
@@ -631,7 +634,7 @@ async function salvaProfilo(){
         dp.codiceFiscale=cf;dp.numeroPatente=pat;dp.scadenzaPatente=patScad;
         dp.telefono=tel;dp.dataNascita=nascita;dp.indirizzo=indirizzo;
         showToast('Dati salvati con successo!');
-    }catch(e){showToast('Errore: '+e.message)}
+    }catch(e){showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
 }
 
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
@@ -861,6 +864,7 @@ async function loadSegnalazioni(){
         });
         el.innerHTML=html;
     }catch(e){
+        segnalazioniList=[];
         el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Errore caricamento segnalazioni</p></div>';
     }
 }
