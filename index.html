@@ -638,6 +638,7 @@ function showToast(m){var e=document.createElement('div');e.className='toast';e.
 
 // === RITORNI ===
 var ritorniList=[];
+var segnalazioniList=[];
 
 async function loadRitorni(){
     var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
@@ -777,6 +778,10 @@ async function inviaSegnalazione(){
     if(!tipo){showToast('Seleziona il tipo di problema');return}
     if(!descrizione){showToast('Descrivi il problema');return}
 
+    var oggi=new Date().toISOString().slice(0,10);
+    var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)});
+    if(dupSeg){showToast('Hai già inviato questa segnalazione oggi');return}
+
     var tipoLabels={
         cliente_assente:'Cliente assente',
         indirizzo_errato:'Indirizzo errato',
@@ -834,6 +839,7 @@ async function loadSegnalazioni(){
     var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
     try{
         var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(20).get();
+        segnalazioniList=snap.docs.map(function(doc){return doc.data()});
         if(snap.empty){
             el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">✅</div><p>Nessuna segnalazione</p></div>';
             return;
