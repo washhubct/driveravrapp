@@ -327,7 +327,7 @@ async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta
 try{submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',e.message)}finally{submitting=false}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
-var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
+var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;if(msTo1am<0)msTo1am+=86400000;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
 
 // Imposta data di oggi nel campo data
 function setOggi(){document.getElementById('ncData').value=new Date().toISOString().slice(0,10)}
@@ -648,8 +648,8 @@ async function loadRitorni(){
     if(!em)return;
     try{
         var s=await db.collection('ritorni').where('driverEmail','==',em).limit(100).get();
-        ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});
-    }catch(e){console.error('loadRitorni error:',e);ritorniList=[]}
+        ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();else if(!x.data)x.data=new Date();return x});
+    }catch(e){console.error('loadRitorni error:',e);ritorniList=[];showToast('Errore caricamento ritorni')}
 }
 
 function resetRitorno(){
@@ -843,7 +843,7 @@ async function loadSegnalazioni(){
     var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
     try{
         var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(20).get();
-        segnalazioniList=snap.docs.map(function(doc){return doc.data()});
+        segnalazioniList=snap.docs.map(function(doc){var x=doc.data();x.id=doc.id;return x});
         if(snap.empty){
             el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">✅</div><p>Nessuna segnalazione</p></div>';
             return;
@@ -867,6 +867,7 @@ async function loadSegnalazioni(){
     }catch(e){
         segnalazioniList=[];
         el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Errore caricamento segnalazioni</p></div>';
+        showToast('Errore caricamento segnalazioni');
     }
 }
 </script>
