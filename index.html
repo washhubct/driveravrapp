@@ -325,7 +325,7 @@ auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').s
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||turnoConfermato)return;var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;if(turnoConfermato){showToast('Turno già avviato con '+targaOggi+' — usa "cambia" per modificare la targa');return}var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
 try{if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
@@ -343,7 +343,7 @@ function initDateLimits(){
     inp.min='2026-04-01';
 }
 
-async function init(email){var s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{
+async function init(email){var s;try{s=await db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get()}catch(e){console.error('init error:',e);showToast('Errore di connessione — ricarica la pagina per riprovare');return}if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50}else{
 // Email non trovata in anagrafica — blocca accesso
 document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';
 var box=document.createElement('div');box.id='noProfileOverlay';box.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
@@ -354,10 +354,10 @@ document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');doc
 initDateLimits();
 await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi();rComp();rProf();document.getElementById('targaView').style.display='flex'}
 
-async function loadFl(){var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}
+async function loadFl(){try{var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}catch(e){console.error('loadFl error:',e);showToast('Impossibile caricare le filiali — verifica la connessione e ricarica la pagina')}}
 
 async function loadReports(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
-try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Errore caricamento consegne: '+e.message)}
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
 }
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
@@ -384,9 +384,9 @@ function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:n
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
-async function eliminaReport(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo report?'))return;submitting=true;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Errore: '+e.message)}finally{submitting=false}}
+async function eliminaReport(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo report?'))return;submitting=true;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{submitting=false}}
 
-async function eliminaRitorno(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;submitting=true;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Errore: '+e.message)}finally{submitting=false}}
+async function eliminaRitorno(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;submitting=true;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{submitting=false}}
 
 function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]=0;mesi[m]+=(r.numConsegne||0)});
 var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
