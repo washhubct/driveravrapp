@@ -378,9 +378,9 @@ showMotivational();
 // Ritorni recenti
 var el3=document.getElementById('listaRitorni');
 if(!ritorniList.length){el3.innerHTML='<div class="empty" style="padding:16px"><p style="font-size:12px;color:var(--text3)">Nessun ritorno registrato</p></div>'}
-else{el3.innerHTML=ritorniList.map(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});var fNome=getFilialeNome(r.filiale);var statoHtml=r.stato==='accettato'?'<span class="report-badge" style="background:#f0fdf4;color:#16a34a">✓ Accettato</span>':r.stato==='rifiutato'?'<span class="report-badge" style="background:#fef2f2;color:#dc2626">✕ Rifiutato</span>':'<span class="report-badge" style="background:#fef3c7;color:#d97706">⏳ In attesa</span>';return'<div class="report-card">'+(r.stato!=='accettato'&&r.stato!=='rifiutato'?'<button class="btn-delete" onclick="eliminaRitorno(\''+r.id+'\')" title="Elimina">✕</button>':'')+'<div class="report-top"><div class="report-filiale">🔄 '+fNome+'</div></div><div class="report-bottom"><span class="report-badge">📅 '+ds+'</span>'+statoHtml+'<span class="report-badge">'+(r.motivoLabel||r.motivo||'')+'</span><span class="report-badge">👤 '+(r.cliente||'—')+'</span></div></div>'}).join('')}}
+else{el3.innerHTML=ritorniList.map(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});var fNome=getFilialeNome(r.filiale);var statoHtml=r.stato==='accettato'?'<span class="report-badge" style="background:#f0fdf4;color:#16a34a">✓ Accettato</span>':r.stato==='rifiutato'?'<span class="report-badge" style="background:#fef2f2;color:#dc2626">✕ Rifiutato</span>':'<span class="report-badge" style="background:#fef3c7;color:#d97706">⏳ In attesa</span>';return'<div class="report-card">'+(r.stato!=='accettato'&&r.stato!=='rifiutato'?'<button class="btn-delete" onclick="eliminaRitorno(\''+r.id+'\')" title="Elimina">✕</button>':'')+'<div class="report-top"><div class="report-filiale">🔄 '+fNome+'</div></div><div class="report-bottom"><span class="report-badge">📅 '+ds+'</span>'+statoHtml+'<span class="report-badge">'+escapeHtml(r.motivoLabel||r.motivo||'')+'</span><span class="report-badge">👤 '+escapeHtml(r.cliente||'—')+'</span></div></div>'}).join('')}}
 
-function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+r.note+'</div>'}h+='</div>';return h}
+function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+escapeHtml(r.note)+'</div>'}h+='</div>';return h}
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
@@ -403,8 +403,6 @@ function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)})
 async function salvaReport(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;setBtn('btnSalvaReport',true,'Salvataggio...');
-    try{
     var dataStr=document.getElementById('ncData').value;
     var fil=document.getElementById('ncFiliale').value;
     var fas=document.getElementById('ncFascia').value;
@@ -426,6 +424,7 @@ async function salvaReport(){
     var dup=reports.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===fil&&r.fascia===fas});
     if(dup){showToast('Hai già inserito questa fascia per la data selezionata');return}
 
+    submitting=true;setBtn('btnSalvaReport',true,'Salvataggio...');
     var fd=fl.find(function(f){return String(f.codice)===fil});
     var filialeNome=fd&&fd.nome?fd.nome:'';
 
@@ -574,7 +573,7 @@ function showMotivational(){
         sub='Sei tra i migliori del team. Fenomenale!';
     }
 
-    el.innerHTML='<div class="motiv-emoji">'+emoji+'</div><div class="motiv-text">'+text+'</div><div class="motiv-sub">'+sub+'</div>';
+    el.innerHTML='<div class="motiv-emoji">'+emoji+'</div><div class="motiv-text">'+escapeHtml(text)+'</div><div class="motiv-sub">'+escapeHtml(sub)+'</div>';
 }
 
 function profiloCompleto(){
@@ -639,6 +638,7 @@ async function salvaProfilo(){
     }catch(e){showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali')}
 }
 
+function escapeHtml(t){if(!t)return '';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
 function setBtn(id,busy,idleLabel){var b=document.getElementById(id);if(!b)return;b.disabled=busy;if(!busy&&idleLabel)b.textContent=idleLabel}
 function errMsg(e){return(e&&e.message)?e.message:'Riprova'}
@@ -681,8 +681,6 @@ function resetRitorno(){
 async function salvaRitorno(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
-    try{
     var dataStr=document.getElementById('rtData').value;
     var filiale=document.getElementById('rtFiliale').value;
     var motivo=document.getElementById('rtMotivo').value;
@@ -706,6 +704,7 @@ async function salvaRitorno(){
     var dupRit=ritorniList.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===filiale&&r.motivo===motivo&&(r.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupRit){showToast('Hai già registrato questo ritorno per la data selezionata');return}
 
+    submitting=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
     var motivoLabels={
         merce_dimenticata:'Merce dimenticata in filiale',
         cliente_assente:'Cliente assente al primo tentativo',
@@ -779,8 +778,6 @@ function initSegFiliali(){
 async function inviaSegnalazione(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;setBtn('btnInviaSeg',true,'Invio...');
-    try{
     var tipo=document.getElementById('segTipo').value;
     var filiale=document.getElementById('segFiliale').value;
     var cliente=document.getElementById('segCliente').value.trim();
@@ -793,6 +790,8 @@ async function inviaSegnalazione(){
     var oggi=new Date().toISOString().slice(0,10);
     var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)&&(s.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupSeg){showToast('Hai già inviato questa segnalazione oggi');return}
+
+    submitting=true;setBtn('btnInviaSeg',true,'Invio...');
 
     var tipoLabels={
         cliente_assente:'Cliente assente',
@@ -866,8 +865,8 @@ async function loadSegnalazioni(){
                     '<div class="seg-tipo">'+(d.tipoLabel||d.tipo)+'</div>'+
                     '<span class="seg-stato '+statoClass+'">'+statoLabel+'</span>'+
                 '</div>'+
-                '<div class="seg-desc">'+d.descrizione+'</div>'+
-                '<div class="seg-meta">'+(d.filialeNome?d.filialeNome+' · ':'')+d.data+'</div>'+
+                '<div class="seg-desc">'+escapeHtml(d.descrizione)+'</div>'+
+                '<div class="seg-meta">'+escapeHtml(d.filialeNome?d.filialeNome+' · ':'')+escapeHtml(d.data)+'</div>'+
                 (d.foto?'<img src="'+d.foto+'" class="seg-foto-thumb">':'')+
             '</div>';
         });
