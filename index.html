@@ -310,7 +310,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCleejDdWN6w41TcBw4fvyAPr_6rxU8Bgs",authDomain:"avr-logistic-dashboard.firebaseapp.com",projectId:"avr-logistic-dashboard",storageBucket:"avr-logistic-dashboard.firebasestorage.app",messagingSenderId:"323721042739",appId:"1:323721042739:web:a9fa1710eeb8cfe3357c46"});
-var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],cc=3.50,fl=[],targaOggi='',submitting=false,turnoConfermato=false;
+var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],cc=3.50,fl=[],targaOggi='',submitting=false,turnoConfermato=false,loggingAccesso=false;
 
 function doLogin(){var e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPw').value;document.getElementById('loginErr').textContent='';if(!e||!p){document.getElementById('loginErr').textContent='Inserisci email e password';return}auth.signInWithEmailAndPassword(e,p).catch(function(r){var m='Errore di accesso';if(r.code==='auth/user-not-found'||r.code==='auth/wrong-password'||r.code==='auth/invalid-credential')m='Email o password non validi';if(r.code==='auth/too-many-requests')m='Troppi tentativi';document.getElementById('loginErr').textContent=m})}
 function showReset(){document.getElementById('loginMain').classList.add('hidden');document.getElementById('resetWrap').classList.add('active');document.getElementById('resetEmail').value=document.getElementById('loginEmail').value}
@@ -318,7 +318,7 @@ function hideReset(){document.getElementById('loginMain').classList.remove('hidd
 function doReset(){var e=document.getElementById('resetEmail').value.trim(),m=document.getElementById('resetMsg');if(!e){m.textContent='Inserisci la tua email';return}auth.sendPasswordResetEmail(e).then(function(){m.style.color='#16a34a';m.textContent='Email inviata! Controlla la posta.'}).catch(function(r){m.style.color='#dc2626';m.textContent='Errore: '+r.message})}
 function doLogout(){targaOggi='';auth.signOut()}
 // Log accesso driver su Firestore (visibile in Dashboard > Log Accessi)
-async function logAccessoDriver(user){try{var ua=navigator.userAgent||'';await db.collection('driverAccessLog').add({email:user.email,uid:user.uid,ruolo:'driver',piattaforma:'app-driver',dispositivo:/Mobile|Android|iPhone|iPad/i.test(ua)?'Mobile':'Desktop',browser:ua.length>120?ua.substring(0,120):ua,timestamp:firebase.firestore.FieldValue.serverTimestamp(),data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})})}catch(e){console.warn('Errore log accesso:',e.message)}}
+async function logAccessoDriver(user){if(loggingAccesso)return;loggingAccesso=true;try{var ua=navigator.userAgent||'';await db.collection('driverAccessLog').add({email:user.email,uid:user.uid,ruolo:'driver',piattaforma:'app-driver',dispositivo:/Mobile|Android|iPhone|iPad/i.test(ua)?'Mobile':'Desktop',browser:ua.length>120?ua.substring(0,120):ua,timestamp:firebase.firestore.FieldValue.serverTimestamp(),data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})})}catch(e){console.warn('Errore log accesso:',e.message)}finally{loggingAccesso=false}}
 auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';logAccessoDriver(u);init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
@@ -750,6 +750,7 @@ var fotoBase64=null;
 function previewFoto(input){
     var file=input.files[0];
     if(!file)return;
+    if(file.size>512*1024){showToast('Foto troppo grande (max 500KB)');input.value='';return}
     var reader=new FileReader();
     reader.onload=function(e){
         fotoBase64=e.target.result;
