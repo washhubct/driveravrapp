@@ -421,7 +421,7 @@ async function salvaReport(){
     if(selDate<minDate){showToast('Non puoi inserire prima del 1° aprile');return}
     if(selDate>maxDate){showToast('Non puoi inserire date future');return}
 
-    var dup=reports.some(function(r){var rd=r.data instanceof Date?r.data:(r.data&&r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===fil&&r.fascia===fas});
+    var dup=reports.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===fil&&r.fascia===fas});
     if(dup){showToast('Hai già inserito questa fascia per la data selezionata');return}
 
     var fd=fl.find(function(f){return String(f.codice)===fil});
@@ -648,7 +648,7 @@ async function loadRitorni(){
     if(!em)return;
     try{
         var s=await db.collection('ritorni').where('driverEmail','==',em).limit(100).get();
-        ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();else if(!x.data)x.data=new Date();return x});
+        ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x}).filter(function(x){return!!x.data});
     }catch(e){console.error('loadRitorni error:',e);ritorniList=[];showToast('Errore caricamento ritorni')}
 }
 
@@ -696,7 +696,7 @@ async function salvaRitorno(){
     if(selDate<minDate){showToast('Non puoi inserire prima del 1° aprile');return}
     if(selDate>maxDate){showToast('Non puoi inserire date future');return}
 
-    var dupRit=ritorniList.some(function(r){var rd=r.data instanceof Date?r.data:(r.data&&r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===filiale&&r.motivo===motivo&&(r.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
+    var dupRit=ritorniList.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===filiale&&r.motivo===motivo&&(r.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupRit){showToast('Hai già registrato questo ritorno per la data selezionata');return}
 
     var motivoLabels={
@@ -784,7 +784,7 @@ async function inviaSegnalazione(){
     if(!descrizione){showToast('Descrivi il problema');return}
 
     var oggi=new Date().toISOString().slice(0,10);
-    var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)});
+    var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)&&(s.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupSeg){showToast('Hai già inviato questa segnalazione oggi');return}
 
     var tipoLabels={
