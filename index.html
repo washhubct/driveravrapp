@@ -668,6 +668,10 @@ function resetRitorno(){
 }
 
 async function salvaRitorno(){
+    if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
+    if(submitting)return;
+    submitting=true;
+    try{
     var dataStr=document.getElementById('rtData').value;
     var filiale=document.getElementById('rtFiliale').value;
     var motivo=document.getElementById('rtMotivo').value;
@@ -723,15 +727,14 @@ async function salvaRitorno(){
         timestamp:firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    try{
-        await db.collection('ritorni').add(rec);
-        var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
-        document.getElementById('rtSuccessDetail').textContent='Ritorno per '+cliente+' · '+(filialeNome||'Filiale '+filiale)+' · '+dataLabel;
-        document.getElementById('formRitorno').style.display='none';
-        document.getElementById('rtSuccess').style.display='block';
-        await loadRitorni();rOggi();
-        showToast('Ritorno registrato');
-    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+e.message)}
+    await db.collection('ritorni').add(rec);
+    var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
+    document.getElementById('rtSuccessDetail').textContent='Ritorno per '+cliente+' · '+(filialeNome||'Filiale '+filiale)+' · '+dataLabel;
+    document.getElementById('formRitorno').style.display='none';
+    document.getElementById('rtSuccess').style.display='block';
+    await loadRitorni();rOggi();
+    showToast('Ritorno registrato');
+    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
 }
 
 // === SEGNALAZIONI ===
@@ -758,6 +761,10 @@ function initSegFiliali(){
 }
 
 async function inviaSegnalazione(){
+    if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
+    if(submitting)return;
+    submitting=true;
+    try{
     var tipo=document.getElementById('segTipo').value;
     var filiale=document.getElementById('segFiliale').value;
     var cliente=document.getElementById('segCliente').value.trim();
@@ -798,13 +805,12 @@ async function inviaSegnalazione(){
         timestamp:firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    try{
-        await db.collection('segnalazioni').add(rec);
-        document.getElementById('formSegnala').style.display='none';
-        document.getElementById('segSuccess').style.display='block';
-        await loadSegnalazioni();
-        showToast('Segnalazione inviata');
-    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+e.message)}
+    await db.collection('segnalazioni').add(rec);
+    document.getElementById('formSegnala').style.display='none';
+    document.getElementById('segSuccess').style.display='block';
+    await loadSegnalazioni();
+    showToast('Segnalazione inviata');
+    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
 }
 
 function resetSegnala(){
