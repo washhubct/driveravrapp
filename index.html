@@ -692,6 +692,9 @@ async function salvaRitorno(){
     if(selDate<minDate){showToast('Non puoi inserire prima del 1° aprile');return}
     if(selDate>maxDate){showToast('Non puoi inserire date future');return}
 
+    var dupRit=ritorniList.some(function(r){var rd=r.data instanceof Date?r.data:(r.data&&r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===filiale&&r.motivo===motivo&&(r.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
+    if(dupRit){showToast('Hai già registrato questo ritorno per la data selezionata');return}
+
     var motivoLabels={
         merce_dimenticata:'Merce dimenticata in filiale',
         cliente_assente:'Cliente assente al primo tentativo',
