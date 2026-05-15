@@ -127,9 +127,11 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="targa-name" id="targaHello">Ciao!</div>
 <div class="targa-sub">Indicami la targa del mezzo con cui inizierai il tuo turno</div>
 <input type="text" id="targaInput" class="targa-input" placeholder="AA000BB" maxlength="8" oninput="this.value=this.value.toUpperCase()">
-<button class="targa-btn" onclick="confermaTarga()">Inizia il turno →</button>
+<button id="btnTarga" class="targa-btn" onclick="confermaTarga()">Inizia il turno →</button>
+<button class="btn btn-outline" onclick="chiudiTargaModal()" style="margin-top:10px;width:100%;display:none" id="btnAnnullaTarga">Annulla</button>
 </div></div>
 <div id="appView" class="app" style="display:none">
+<div id="offlineBanner" style="display:none;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:100">📵 Sei offline — verifica la connessione</div>
 <header class="app-header"><div class="header-top">
 <div class="header-logo"><img src="avr-logo.png" alt="AVR" style="height:32px"><div><div class="header-name" id="driverName">—</div><div class="header-city" id="driverCity">Driver</div></div></div>
 <button class="btn-out" onclick="doLogout()">Esci</button>
@@ -161,7 +163,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
 <div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="10"><div class="num-hint">Massimo 10 consegne per fascia</div></div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label><input type="text" id="ncNote" class="input" placeholder="Problemi, ritardi, segnalazioni..."></div>
-<button class="btn btn-success" onclick="salvaReport()" style="font-size:16px">✓ Conferma consegne</button>
+<button id="btnSalvaReport" class="btn btn-success" onclick="salvaReport()" style="font-size:16px">✓ Conferma consegne</button>
 <button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
 </div>
 <div id="successMsg" class="success-msg" style="display:none">
@@ -208,7 +210,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </select></div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label>
 <input type="text" id="rtNote" class="input" placeholder="Dettagli aggiuntivi..."></div>
-<button class="btn" onclick="salvaRitorno()" style="font-size:16px;background:var(--warning);color:#fff;border-color:var(--warning)">✓ Conferma ritorno</button>
+<button id="btnSalvaRitorno" class="btn" onclick="salvaRitorno()" style="font-size:16px;background:var(--warning);color:#fff;border-color:var(--warning)">✓ Conferma ritorno</button>
 <button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
 </div>
 <div id="rtSuccess" class="success-msg" style="display:none">
@@ -237,7 +239,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="profTelefono" class="input" placeholder="+39 333 1234567" inputmode="tel"></div>
 <div class="form-group"><label class="form-label">Data di Nascita</label><input type="date" id="profDataNascita" class="input"></div>
 <div class="form-group"><label class="form-label">Indirizzo di Residenza</label><input type="text" id="profIndirizzo" class="input" placeholder="Via Roma 1, 95100 Catania"></div>
-<button class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
+<button id="btnSalvaProfilo" class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
 </div>
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div>
@@ -275,7 +277,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <span style="font-size:13px;color:var(--text3)">Tocca per scattare o caricare foto</span>
 </div>
 </div></div>
-<button class="btn btn-blue" onclick="inviaSegnalazione()" style="font-size:15px">📨 Invia segnalazione</button>
+<button id="btnInviaSeg" class="btn btn-blue" onclick="inviaSegnalazione()" style="font-size:15px">📨 Invia segnalazione</button>
 </div>
 <div id="segSuccess" style="display:none" class="success-msg">
 <div class="success-icon">📨</div>
@@ -323,8 +325,8 @@ auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').s
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||turnoConfermato)return;var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
-try{if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',e.message)}finally{submitting=false}
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||turnoConfermato)return;var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+try{if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
 var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;if(msTo1am<0)msTo1am+=86400000;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
@@ -401,7 +403,7 @@ function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)})
 async function salvaReport(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;
+    submitting=true;setBtn('btnSalvaReport',true,'Salvataggio...');
     try{
     var dataStr=document.getElementById('ncData').value;
     var fil=document.getElementById('ncFiliale').value;
@@ -411,7 +413,7 @@ async function salvaReport(){
 
     if(!dataStr){showToast('Seleziona la data');return}
     if(!fil){showToast('Seleziona la filiale');return}
-    if(!num||num<1){showToast('Inserisci il numero di consegne');return}
+    if(!num||num<1){showToast('Inserisci almeno 1 consegna');return}
     if(num>10){showToast('Massimo 10 consegne per fascia');return}
 
     // Validazione data: non prima del 1 aprile, non dopo oggi
@@ -448,12 +450,12 @@ async function salvaReport(){
     document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
     document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
     await loadReports();rOggi();rComp()
-    }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
+    }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaReport',false,'✓ Conferma consegne')}
 }
 
 function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
 
-function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova();if(n==='segnala'){initSegFiliali();resetSegnala();loadSegnalazioni()}if(n==='ritorno')resetRitorno()}
+function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova();if(n==='segnala'){initSegFiliali();resetSegnala();document.getElementById('listaSegnalazioni').innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px;color:var(--text3)">Caricamento...</p></div>';loadSegnalazioni()}if(n==='ritorno')resetRitorno()}
 
 function cn(c){return{CT:'Catania',ME:'Messina',EN:'Enna',SR:'Siracusa',PA:'Palermo'}[c]||c||'—'}
 
@@ -609,7 +611,7 @@ async function salvaProfilo(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(!dp||!dp.id){showToast('Errore: profilo non trovato');return}
     if(submitting)return;
-    submitting=true;
+    submitting=true;setBtn('btnSalvaProfilo',true,'Salvataggio...');
     var cf=document.getElementById('profCF').value.trim().toUpperCase();
     var pat=document.getElementById('profPatente').value.trim().toUpperCase();
     var patScad=document.getElementById('profPatenteScad').value;
@@ -617,9 +619,9 @@ async function salvaProfilo(){
     var nascita=document.getElementById('profDataNascita').value;
     var indirizzo=document.getElementById('profIndirizzo').value.trim();
 
-    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');submitting=false;return}
-    if(!pat){showToast('Inserisci il numero della patente');submitting=false;return}
-    if(!tel){showToast('Inserisci il numero di telefono');submitting=false;return}
+    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
+    if(!pat){showToast('Inserisci il numero della patente');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
+    if(!tel){showToast('Inserisci il numero di telefono');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
 
     try{
         await db.collection('driverAnagrafica').doc(dp.id).update({
@@ -634,10 +636,15 @@ async function salvaProfilo(){
         dp.codiceFiscale=cf;dp.numeroPatente=pat;dp.scadenzaPatente=patScad;
         dp.telefono=tel;dp.dataNascita=nascita;dp.indirizzo=indirizzo;
         showToast('Dati salvati con successo!');
-    }catch(e){showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
+    }catch(e){showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali')}
 }
 
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
+function setBtn(id,busy,idleLabel){var b=document.getElementById(id);if(!b)return;b.disabled=busy;if(!busy&&idleLabel)b.textContent=idleLabel}
+function errMsg(e){return(e&&e.message)?e.message:'Riprova'}
+function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi)document.getElementById('appView').style.display='flex';setBtn('btnAnnullaTarga',false);document.getElementById('btnAnnullaTarga').style.display='none'}
+window.addEventListener('offline',function(){document.getElementById('offlineBanner').style.display='block'});
+window.addEventListener('online',function(){document.getElementById('offlineBanner').style.display='none'});
 
 // === RITORNI ===
 var ritorniList=[];
@@ -674,7 +681,7 @@ function resetRitorno(){
 async function salvaRitorno(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;
+    submitting=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
     try{
     var dataStr=document.getElementById('rtData').value;
     var filiale=document.getElementById('rtFiliale').value;
@@ -741,7 +748,7 @@ async function salvaRitorno(){
     document.getElementById('rtSuccess').style.display='block';
     await loadRitorni();rOggi();
     showToast('Ritorno registrato');
-    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
+    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaRitorno',false,'✓ Conferma ritorno')}
 }
 
 // === SEGNALAZIONI ===
@@ -772,7 +779,7 @@ function initSegFiliali(){
 async function inviaSegnalazione(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(submitting)return;
-    submitting=true;
+    submitting=true;setBtn('btnInviaSeg',true,'Invio...');
     try{
     var tipo=document.getElementById('segTipo').value;
     var filiale=document.getElementById('segFiliale').value;
@@ -823,7 +830,7 @@ async function inviaSegnalazione(){
     document.getElementById('segSuccess').style.display='block';
     await loadSegnalazioni();
     showToast('Segnalazione inviata');
-    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+(e.message||'Riprova'))}finally{submitting=false}
+    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnInviaSeg',false,'📨 Invia segnalazione')}
 }
 
 function resetSegnala(){
