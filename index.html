@@ -444,7 +444,7 @@ async function salvaReport(){
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    await db.collection('reportDriver').add(rec);
+    try{await db.collection('reportDriver').add(rec);
     var dataLabel=selDate.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
     document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
     document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
@@ -705,7 +705,7 @@ async function salvaRitorno(){
     if(dupRit){showToast('Hai già registrato questo ritorno per la data selezionata');return}
 
     submitting=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
-    var motivoLabels={
+    try{var motivoLabels={
         merce_dimenticata:'Merce dimenticata in filiale',
         cliente_assente:'Cliente assente al primo tentativo',
         errore_ordine:'Errore nell\'ordine',
@@ -793,7 +793,7 @@ async function inviaSegnalazione(){
 
     submitting=true;setBtn('btnInviaSeg',true,'Invio...');
 
-    var tipoLabels={
+    try{var tipoLabels={
         cliente_assente:'Cliente assente',
         indirizzo_errato:'Indirizzo errato',
         pacco_danneggiato:'Pacco danneggiato',
