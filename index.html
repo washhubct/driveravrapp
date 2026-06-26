@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>AVR Driver</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="apple-touch-icon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -363,7 +366,7 @@ await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi
 async function loadFl(){try{var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}catch(e){console.error('loadFl error:',e);showToast('Impossibile caricare le filiali — verifica la connessione e ricarica la pagina')}}
 
 async function loadReports(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
-try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).orderBy('data','desc').limit(2000).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
 }
 
 function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
