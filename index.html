@@ -145,7 +145,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="app-body">
 <div id="tabOggi" class="screen active">
 <div id="motivationalBanner" class="motiv-banner"></div>
-<div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseEuro">€0,00</div></div></div>
+<div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseMedia">consegne</div></div></div>
 <div class="kpi-row" style="margin-top:-8px"><div class="kpi" style="border-color:rgba(217,119,6,0.3)"><div class="kpi-label" style="color:var(--warning)">🔄 Ritorni mese</div><div class="kpi-val" id="kRitorni" style="color:var(--warning)">0</div></div></div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
 <button class="btn btn-blue" onclick="showTab('nuova')" style="flex:1;font-size:15px">+ Consegne</button>
@@ -168,6 +168,13 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="form-group"><label class="form-label">Filiale</label><select id="ncFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
 <div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
 <div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="10"><div class="num-hint">Massimo 10 consegne per fascia</div></div>
+<div class="form-group"><label class="form-label">Orario del giro</label>
+<div style="display:flex;gap:10px">
+<div style="flex:1"><input type="time" id="ncOraInizio" class="input" style="margin-bottom:4px"><div class="num-hint">Inizio giro</div></div>
+<div style="flex:1"><input type="time" id="ncOraFine" class="input" style="margin-bottom:4px"><div class="num-hint">Fine giro</div></div>
+</div>
+<div class="num-hint">Ora di partenza dalla filiale e ora dell'ultima consegna</div>
+</div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label><input type="text" id="ncNote" class="input" placeholder="Problemi, ritardi, segnalazioni..."></div>
 <button id="btnSalvaReport" class="btn btn-success" onclick="salvaReport()" style="font-size:16px">✓ Conferma consegne</button>
 <button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
@@ -228,8 +235,8 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div>
 </div>
 <div id="tabCompensi" class="screen">
-<div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Compenso mese corrente</div><div class="kpi-val" id="kCompenso">€0,00</div><div class="kpi-sub" id="kCompDetail">0 consegne</div></div></div>
-<div class="section-title">Storico compensi</div><div id="listaCompensi"></div></div>
+<div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Consegne mese corrente</div><div class="kpi-val" id="kCompenso">0</div><div class="kpi-sub" id="kCompDetail">—</div></div></div>
+<div class="section-title">Storico mensile</div><div id="listaCompensi"></div></div>
 <div id="tabProfilo" class="screen">
 <div class="prof-card">
 <div class="prof-name" id="profNome">—</div>
@@ -248,7 +255,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button id="btnSalvaProfilo" class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
 </div>
 <div class="section-title">Le mie statistiche</div>
-<div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Totale guadagnato</div><div class="kpi-val" id="profTotG">€0</div></div></div>
+<div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Giorni attivi</div><div class="kpi-val" id="profTotG">0</div></div></div>
 <div class="section-title" style="margin-top:20px">🏆 Classifica del mese</div>
 <div id="leaderboard" class="leaderboard"></div>
 </div>
@@ -301,7 +308,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="nav-tab active" onclick="showTab('oggi')" data-tab="oggi"><span class="nav-tab-icon">📦</span>Oggi</button>
 <button class="nav-tab" onclick="showTab('nuova')" data-tab="nuova"><span class="nav-tab-icon">➕</span>Nuova</button>
 <button class="nav-tab" onclick="showTab('segnala')" data-tab="segnala"><span class="nav-tab-icon">⚠️</span>Segnala</button>
-<button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">💰</span>Compensi</button>
+<button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">📊</span>Consegne</button>
 <button class="nav-tab" onclick="showTab('profilo')" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
 </nav></div>
 <div id="profileAlert" class="profile-alert" style="display:none">
@@ -370,7 +377,9 @@ function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.subst
 var consOggi=0,consMese=0,ritorniMese=0;
 reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
 ritorniList.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.toISOString().slice(0,7);if(m===ms)ritorniMese+=(r.numRitorni||0)});
-document.getElementById('kOggi').textContent=consOggi;document.getElementById('kMese').textContent=consMese;document.getElementById('kMeseEuro').textContent='€'+(consMese*cc).toFixed(2).replace('.',',');
+var giorniMese={};reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);if(d.substring(0,7)===ms&&(r.numConsegne||0)>0)giorniMese[d]=true});
+var nGiorni=Object.keys(giorniMese).length;
+document.getElementById('kOggi').textContent=consOggi;document.getElementById('kMese').textContent=consMese;document.getElementById('kMeseMedia').textContent=nGiorni>0?'~'+Math.round(consMese/nGiorni)+'/giorno':'consegne';
 document.getElementById('kRitorni').textContent=ritorniMese;
 var todayReports=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d===oggi});
 var el=document.getElementById('listaOggi');
@@ -386,7 +395,7 @@ var el3=document.getElementById('listaRitorni');
 if(!ritorniList.length){el3.innerHTML='<div class="empty" style="padding:16px"><p style="font-size:12px;color:var(--text3)">Nessun ritorno registrato</p></div>'}
 else{el3.innerHTML=ritorniList.map(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});var fNome=getFilialeNome(r.filiale);var statoHtml=r.stato==='accettato'?'<span class="report-badge" style="background:#f0fdf4;color:#16a34a">✓ Accettato</span>':r.stato==='rifiutato'?'<span class="report-badge" style="background:#fef2f2;color:#dc2626">✕ Rifiutato</span>':'<span class="report-badge" style="background:#fef3c7;color:#d97706">⏳ In attesa</span>';return'<div class="report-card">'+(r.stato!=='accettato'&&r.stato!=='rifiutato'?'<button class="btn-delete" onclick="eliminaRitorno(\''+r.id+'\')" title="Elimina">✕</button>':'')+'<div class="report-top"><div class="report-filiale">🔄 '+fNome+'</div></div><div class="report-bottom"><span class="report-badge">📅 '+ds+'</span>'+statoHtml+'<span class="report-badge">'+escapeHtml(r.motivoLabel||r.motivo||'')+'</span><span class="report-badge">👤 '+escapeHtml(r.cliente||'—')+'</span></div></div>'}).join('')}}
 
-function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span></div>';if(r.note){h+='<div class="report-note">'+escapeHtml(r.note)+'</div>'}h+='</div>';return h}
+function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span>'+(r.durataMin?'<span class="report-badge">⏱ '+fmtDurata(r.durataMin)+' · ~'+fmtDurata(r.tempoMedioMin||r.durataMin/(r.numConsegne||1))+'/consegna</span>':'')+'</div>';if(r.note){h+='<div class="report-note">'+escapeHtml(r.note)+'</div>'}h+='</div>';return h}
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
@@ -394,17 +403,17 @@ async function eliminaReport(id){if(!auth.currentUser)return;if(submitting)retur
 
 async function eliminaRitorno(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;submitting=true;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{submitting=false}}
 
-function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]=0;mesi[m]+=(r.numConsegne||0)});
+function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]={count:0,giorni:{}};mesi[m].count+=(r.numConsegne||0);if((r.numConsegne||0)>0)mesi[m].giorni[d.toISOString().slice(0,10)]=true});
 var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
-if(!mesi[mcur])mesi[mcur]=0;
+if(!mesi[mcur])mesi[mcur]={count:0,giorni:{}};
 var sorted=Object.entries(mesi).sort(function(a,b){return b[0].localeCompare(a[0])});
-var ccur=mesi[mcur]||0;
-document.getElementById('kCompenso').textContent='€'+(ccur*cc).toFixed(2).replace('.',',');document.getElementById('kCompDetail').textContent=ccur+' consegne';
+var ccur=mesi[mcur].count||0,gcur=Object.keys(mesi[mcur].giorni).length;
+document.getElementById('kCompenso').textContent=ccur;document.getElementById('kCompDetail').textContent=gcur>0?gcur+' giorni attivi · ~'+Math.round(ccur/gcur)+'/giorno':'—';
 var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo','Aprile','Maggio','Giugno','Luglio','Agosto','Settembre','Ottobre','Novembre','Dicembre'];
-if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">💰</div><p>Nessun compenso</p></div>';return}
-el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],v=e[1]*cc;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+e[1]+' consegne</div></div><div class="comp-val">€'+v.toFixed(2)+'</div></div>'}).join('')}
+if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><p>Nessuna consegna</p></div>';return}
+el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],g=Object.keys(e[1].giorni).length;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+g+' giorni attivi</div></div><div class="comp-val">'+e[1].count+' consegne</div></div>'}).join('')}
 
-function rProf(){var tot=0;reports.forEach(function(r){tot+=(r.numConsegne||0)});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent='€'+(tot*cc).toFixed(0);document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
+function rProf(){var tot=0,giorni={};reports.forEach(function(r){tot+=(r.numConsegne||0);if((r.numConsegne||0)>0){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);giorni[d]=true}});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent=Object.keys(giorni).length;document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
 
 async function salvaReport(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
@@ -414,11 +423,18 @@ async function salvaReport(){
     var fas=document.getElementById('ncFascia').value;
     var num=parseInt(document.getElementById('ncNumero').value)||0;
     var note=document.getElementById('ncNote').value.trim();
+    var oraInizio=document.getElementById('ncOraInizio').value;
+    var oraFine=document.getElementById('ncOraFine').value;
 
     if(!dataStr){showToast('Seleziona la data');return}
     if(!fil){showToast('Seleziona la filiale');return}
     if(!num||num<1){showToast('Inserisci almeno 1 consegna');return}
     if(num>10){showToast('Massimo 10 consegne per fascia');return}
+    if(!oraInizio||!oraFine){showToast('Inserisci ora di inizio e fine giro');return}
+    var durataMin=minutiTra(oraInizio,oraFine);
+    if(durataMin<=0){showToast('L\'ora di fine deve essere dopo l\'inizio');return}
+    if(durataMin>720){showToast('Durata giro superiore a 12 ore — controlla gli orari');return}
+    if(durataMin<num*2){showToast('Durata troppo breve per '+num+' consegne — controlla gli orari');return}
 
     // Validazione data: non prima del 1 aprile, non dopo oggi
     var selDate=new Date(dataStr+'T12:00:00');
@@ -446,6 +462,10 @@ async function salvaReport(){
         data:firebase.firestore.Timestamp.fromDate(selDate),
         mese:selDate.getFullYear()+'-'+String(selDate.getMonth()+1).padStart(2,'0'),
         area:fd?fd.area:(dp.citta||'??'),
+        oraInizio:oraInizio,
+        oraFine:oraFine,
+        durataMin:durataMin,
+        tempoMedioMin:Math.round(durataMin/num*10)/10,
         fonte:'driver_app',
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
     };
@@ -458,7 +478,13 @@ async function salvaReport(){
     }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaReport',false,'✓ Conferma consegne')}
 }
 
-function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
+function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('ncOraInizio').value='';document.getElementById('ncOraFine').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
+
+// Minuti tra due orari HH:MM (stesso giorno)
+function minutiTra(inizio,fine){var pi=inizio.split(':'),pf=fine.split(':');return (parseInt(pf[0])*60+parseInt(pf[1]))-(parseInt(pi[0])*60+parseInt(pi[1]))}
+
+// Formatta minuti in "1h 25m" / "45m"
+function fmtDurata(min){if(min==null||isNaN(min))return '—';min=Math.round(min);var h=Math.floor(min/60),m=min%60;return h>0?h+'h '+m+'m':m+'m'}
 
 function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova();if(n==='segnala'){initSegFiliali();resetSegnala();document.getElementById('listaSegnalazioni').innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px;color:var(--text3)">Caricamento...</p></div>';loadSegnalazioni()}if(n==='ritorno')resetRitorno()}
 
