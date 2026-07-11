@@ -81,6 +81,20 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 .lb-nick{flex:1;font-size:14px;font-weight:600;color:var(--navy)}
 .lb-nick .lb-you{font-size:10px;font-weight:700;color:var(--blue);background:rgba(37,99,235,0.1);padding:2px 6px;border-radius:4px;margin-left:6px}
 .lb-score{font-size:16px;font-weight:800;color:var(--blue)}
+.premi-banner{background:linear-gradient(135deg,var(--navy,#0f1d3d),#1e3a8a);border-radius:var(--radius);padding:18px 16px;margin-bottom:20px;color:#fff;text-align:center;box-shadow:var(--shadow)}
+.premi-title{font-size:14px;font-weight:800;margin-bottom:14px;letter-spacing:.3px}
+.premi-row{display:flex;gap:10px;justify-content:center;align-items:stretch}
+.premi-item{flex:1;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:10px 6px}
+.premi-item:first-child{background:rgba(251,191,36,0.15);border-color:rgba(251,191,36,0.4)}
+.premi-medal{font-size:24px}
+.premi-val{font-size:20px;font-weight:800;margin:2px 0}
+.premi-pos{font-size:10px;opacity:.8}
+.premi-note{font-size:10px;opacity:.7;margin-top:12px}
+.intro-card{background:var(--white);border-radius:16px;padding:26px 22px;max-width:400px;width:100%;max-height:85vh;overflow-y:auto;text-align:left}
+.intro-card h2{font-size:19px;color:var(--navy);margin-bottom:14px;text-align:center}
+.intro-point{display:flex;gap:12px;margin-bottom:14px;font-size:13px;line-height:1.5;color:var(--text2)}
+.intro-point .ic{font-size:22px;flex-shrink:0}
+.intro-privacy{background:#fef3c7;border:1px solid #fbbf24;border-radius:10px;padding:12px;font-size:12px;line-height:1.5;color:#78350f;margin:14px 0}
 .lb-score span{font-size:11px;font-weight:500;color:var(--text3)}
 .lb-bonus{font-size:12px;margin-left:4px}
 .lb-trend-wrap{font-size:10px;color:var(--text3);margin-top:2px;font-weight:500}
@@ -127,6 +141,18 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-outline" onclick="hideReset()">Torna al login</button>
 <div id="resetMsg" class="error"></div></div>
 </div></div>
+<div id="lbIntroView" class="targa-overlay" style="display:none">
+<div class="intro-card">
+<div style="text-align:center;font-size:44px;margin-bottom:8px">🏆</div>
+<h2>Novità: Classifica con premi!</h2>
+<div class="intro-point"><span class="ic">🎁</span><span>Ogni mese i primi 3 driver in classifica vincono <strong>buoni pasto</strong>: <strong>€100</strong> al 1° posto, <strong>€70</strong> al 2° e <strong>€40</strong> al 3°.</span></div>
+<div class="intro-point"><span class="ic">📦</span><span>Guadagni <strong>1 punto per ogni consegna</strong> registrata nell'app.</span></div>
+<div class="intro-point"><span class="ic">⚡</span><span>Sei veloce? Tempo medio sotto i <strong>20 minuti</strong> a consegna = <strong>+30 punti</strong>, sotto i 25 = +15. Ricordati di inserire gli orari di inizio e fine giro!</span></div>
+<div class="intro-point"><span class="ic">🛡️</span><span>Zero danni nel mese = <strong>+50 punti</strong>. Ogni danno = −30.</span></div>
+<div class="intro-privacy"><strong>🔒 Riservata:</strong> la classifica è anonima (ognuno ha un nickname) ed è a uso esclusivo dei driver AVR. <strong>Non condividerla</strong> con nessuno al di fuori dell'azienda: niente screenshot su social o gruppi esterni.</div>
+<button class="btn btn-blue" onclick="chiudiLbIntro()" style="font-size:15px">Ho capito, si va! 🚀</button>
+</div>
+</div>
 <div id="targaView" class="targa-overlay" style="display:none">
 <div class="targa-card">
 <div class="targa-hello">👋</div>
@@ -237,6 +263,26 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div id="tabCompensi" class="screen">
 <div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Consegne mese corrente</div><div class="kpi-val" id="kCompenso">0</div><div class="kpi-sub" id="kCompDetail">—</div></div></div>
 <div class="section-title">Storico mensile</div><div id="listaCompensi"></div></div>
+<div id="tabClassifica" class="screen">
+<div class="premi-banner">
+<div class="premi-title">🏆 Premi del mese — Buoni pasto</div>
+<div class="premi-row">
+<div class="premi-item"><div class="premi-medal">🥇</div><div class="premi-val">€100</div><div class="premi-pos">1° posto</div></div>
+<div class="premi-item big"><div class="premi-medal">🥈</div><div class="premi-val">€70</div><div class="premi-pos">2° posto</div></div>
+<div class="premi-item"><div class="premi-medal">🥉</div><div class="premi-val">€40</div><div class="premi-pos">3° posto</div></div>
+</div>
+<div class="premi-note">Assegnati ogni fine mese in base alla classifica</div>
+</div>
+<div class="section-title">🏆 Classifica del mese</div>
+<div id="leaderboardTab" class="leaderboard"></div>
+<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);font-size:12px;color:var(--text2);line-height:1.6">
+<strong>Come si guadagnano punti</strong><br>
+📦 1 consegna = 1 punto<br>
+⚡ Velocità: tempo medio sotto 20 min/consegna = +30 pt, sotto 25 min = +15 pt (serve registrare gli orari del giro)<br>
+🛡️ Zero danni nel mese = +50 pt · ogni danno = −30 pt<br>
+<span style="color:var(--text3);font-size:11px;display:block;margin-top:8px">🔒 La classifica è anonima (nickname) e riservata ai driver AVR: non condividerla con nessuno al di fuori dell'azienda.</span>
+</div>
+</div>
 <div id="tabProfilo" class="screen">
 <div class="prof-card">
 <div class="prof-name" id="profNome">—</div>
@@ -307,6 +353,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <nav class="bottom-nav">
 <button class="nav-tab active" onclick="showTab('oggi')" data-tab="oggi"><span class="nav-tab-icon">📦</span>Oggi</button>
 <button class="nav-tab" onclick="showTab('nuova')" data-tab="nuova"><span class="nav-tab-icon">➕</span>Nuova</button>
+<button class="nav-tab" onclick="showTab('classifica')" data-tab="classifica"><span class="nav-tab-icon">🏆</span>Classifica</button>
 <button class="nav-tab" onclick="showTab('segnala')" data-tab="segnala"><span class="nav-tab-icon">⚠️</span>Segnala</button>
 <button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">📊</span>Consegne</button>
 <button class="nav-tab" onclick="showTab('profilo')" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
@@ -338,7 +385,7 @@ auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').s
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;if(turnoConfermato){showToast('Turno già avviato con '+targaOggi+' — usa "cambia" per modificare la targa');return}var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;if(turnoConfermato){showToast('Turno già avviato con '+targaOggi+' — usa "cambia" per modificare la targa');return}var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;maybeShowLbIntro();
 try{if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 // Auto-logout alle 01:00
@@ -486,7 +533,7 @@ function minutiTra(inizio,fine){var pi=inizio.split(':'),pf=fine.split(':');retu
 // Formatta minuti in "1h 25m" / "45m"
 function fmtDurata(min){if(min==null||isNaN(min))return '—';min=Math.round(min);var h=Math.floor(min/60),m=min%60;return h>0?h+'h '+m+'m':m+'m'}
 
-function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='nuova')resetNuova();if(n==='segnala'){initSegFiliali();resetSegnala();document.getElementById('listaSegnalazioni').innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px;color:var(--text3)">Caricamento...</p></div>';loadSegnalazioni()}if(n==='ritorno')resetRitorno()}
+function showTab(n){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active')});document.getElementById('tab'+n.charAt(0).toUpperCase()+n.slice(1)).classList.add('active');document.querySelectorAll('.nav-tab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===n)});if(n==='oggi')rOggi();if(n==='compensi')rComp();if(n==='profilo')rProf();if(n==='classifica')loadLeaderboard();if(n==='nuova')resetNuova();if(n==='segnala'){initSegFiliali();resetSegnala();document.getElementById('listaSegnalazioni').innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px;color:var(--text3)">Caricamento...</p></div>';loadSegnalazioni()}if(n==='ritorno')resetRitorno()}
 
 function cn(c){return{CT:'Catania',ME:'Messina',EN:'Enna',SR:'Siracusa',PA:'Palermo'}[c]||c||'—'}
 
@@ -516,8 +563,23 @@ function renderTrendMobile(posPrec,posCorrente){
     return '<span class="lb-trend flat">=</span>';
 }
 
+// Popup primo accesso classifica — mostrato una sola volta per dispositivo
+function maybeShowLbIntro(){
+    try{if(localStorage.getItem('avrLbIntro_v1'))return}catch(e){return}
+    document.getElementById('lbIntroView').style.display='flex';
+}
+function chiudiLbIntro(){
+    document.getElementById('lbIntroView').style.display='none';
+    try{localStorage.setItem('avrLbIntro_v1','1')}catch(e){}
+    showTab('classifica');
+}
+
+function setLeaderboardHtml(html){
+    var el=document.getElementById('leaderboard');if(el)el.innerHTML=html;
+    var el2=document.getElementById('leaderboardTab');if(el2)el2.innerHTML=html;
+}
+
 async function loadLeaderboard(){
-    var el=document.getElementById('leaderboard');
     var meseCorrente=meseCorrenteRoma();
     var myName=(dp.cognome||'').toUpperCase().trim();
 
@@ -533,7 +595,7 @@ async function loadLeaderboard(){
             var msg=hasMyReports
                 ? 'Classifica in costruzione… si aggiorna in automatico ogni ora.'
                 : 'Inizia il tuo turno per entrare in classifica!';
-            el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>'+msg+'</p></div>';
+            setLeaderboardHtml('<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>'+msg+'</p></div>');
             return;
         }
         var data=doc.data();
@@ -552,7 +614,7 @@ async function loadLeaderboard(){
             var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(pos);
             var nick=getNickname(entry.driver);
             var youTag=isMe?'<span class="lb-you">SEI TU!</span>':'';
-            var bonusTag=entry.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
+            var bonusTag=(entry.bonusVelocita>0?'<span class="lb-bonus" title="Bonus velocità">⚡</span>':'')+(entry.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'');
             var trend=renderTrendMobile(entry.posPrec,pos);
 
             html+='<div class="lb-row'+(isMe?' me':'')+'">'+
@@ -564,7 +626,7 @@ async function loadLeaderboard(){
 
         if(myPos>=10){
             var myData=sorted[myPos];
-            var myBonus=myData.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'';
+            var myBonus=(myData.bonusVelocita>0?'<span class="lb-bonus">⚡</span>':'')+(myData.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'');
             var myTrend=renderTrendMobile(myData.posPrec,myPos+1);
             // Percentile: 1° = 100%, ultimo = ~ (1/total)*100
             var percentile=Math.max(1,Math.round((1-myPos/totalDrivers)*100));
@@ -587,12 +649,13 @@ async function loadLeaderboard(){
         }
 
         html+='<div style="padding:10px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border)">'+
-            '1 consegna = 1 pt · 🛡️ Zero danni = +50 pt · Danno = -30 pt</div>';
+            '1 consegna = 1 pt · ⚡ Velocità = +30/+15 pt · 🛡️ Zero danni = +50 pt · Danno = -30 pt<br>'+
+            '🏆 Premi mensili in buoni pasto: 🥇 €100 · 🥈 €70 · 🥉 €40</div>';
 
-        el.innerHTML=html;
+        setLeaderboardHtml(html);
     }catch(e){
         console.warn('Leaderboard load:',e.message);
-        el.innerHTML='<div class="empty" style="padding:20px"><p style="font-size:12px">Classifica non disponibile</p></div>';
+        setLeaderboardHtml('<div class="empty" style="padding:20px"><p style="font-size:12px">Classifica non disponibile</p></div>');
     }
 }
 
@@ -712,7 +775,7 @@ function escapeHtml(t){if(!t)return '';return String(t).replace(/&/g,'&amp;').re
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
 function setBtn(id,busy,idleLabel){var b=document.getElementById(id);if(!b)return;b.disabled=busy;if(!busy&&idleLabel)b.textContent=idleLabel}
 function errMsg(e){return(e&&e.message)?e.message:'Riprova'}
-function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi)document.getElementById('appView').style.display='flex';setBtn('btnAnnullaTarga',false);document.getElementById('btnAnnullaTarga').style.display='none'}
+function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi){document.getElementById('appView').style.display='flex';maybeShowLbIntro()}setBtn('btnAnnullaTarga',false);document.getElementById('btnAnnullaTarga').style.display='none'}
 window.addEventListener('offline',function(){document.getElementById('offlineBanner').style.display='block'});
 window.addEventListener('online',function(){document.getElementById('offlineBanner').style.display='none'});
 
