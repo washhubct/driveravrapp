@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,viewport-fit=cover">
-<title>AVR Driver</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Last Mile Driver</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="icon" href="apple-touch-icon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0f1d3d">
@@ -126,7 +129,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </head>
 <body>
 <div id="loginView" class="login-wrap"><div class="login-box">
-<div class="login-logo"><img src="avr-logo.png" alt="AVR"></div>
+<div class="login-logo"><img src="avr-logo.png" alt="Last Mile"></div>
 <div class="login-title">Area Driver</div><div class="login-sub">Accedi per gestire le tue consegne</div>
 <div id="loginMain" class="login-main">
 <input type="email" id="loginEmail" class="input" placeholder="La tua email">
@@ -165,7 +168,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div id="appView" class="app" style="display:none">
 <div id="offlineBanner" style="display:none;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:100">📵 Sei offline — verifica la connessione</div>
 <header class="app-header"><div class="header-top">
-<div class="header-logo"><img src="avr-logo.png" alt="AVR" style="height:32px"><div><div class="header-name" id="driverName">—</div><div class="header-city" id="driverCity">Driver</div></div></div>
+<div class="header-logo"><img src="avr-logo.png" alt="Last Mile" style="height:32px"><div><div class="header-name" id="driverName">—</div><div class="header-city" id="driverCity">Driver</div></div></div>
 <button class="btn-out" onclick="doLogout()">Esci</button>
 </div></header>
 <div class="app-body">
@@ -407,7 +410,7 @@ async function init(email){var s;try{s=await db.collection('driverAnagrafica').w
 // Email non trovata in anagrafica — blocca accesso
 document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';
 var box=document.createElement('div');box.id='noProfileOverlay';box.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
-box.innerHTML='<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">⚠️</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Profilo non trovato</div><div style="font-size:14px;color:#64748b;line-height:1.6;margin-bottom:20px">La tua email (<strong>'+email+'</strong>) non è registrata in anagrafica.<br>Contatta l\'amministrazione per essere abilitato.</div><button onclick="document.getElementById(\'noProfileOverlay\').remove();doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">← Esci</button></div>';
+box.innerHTML='<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Account non abilitato</div><div style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:8px">L\'email <strong style="color:#0f1d3d">'+email+'</strong> non è ancora abilitata all\'app driver.</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:20px">Contatta l\'amministrazione Last Mile per essere attivato:<br><a href="mailto:amministrazione@avrlogisticarl.com" style="color:#2563eb;font-weight:600;text-decoration:none">amministrazione@avrlogisticarl.com</a></div><button onclick="document.getElementById(\'noProfileOverlay\').remove();doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">← Torna al login</button></div>';
 document.body.appendChild(box);return}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+(dp.nome||dp.cognome)+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';
@@ -417,7 +420,7 @@ await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi
 async function loadFl(){try{var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}catch(e){console.error('loadFl error:',e);showToast('Impossibile caricare le filiali — verifica la connessione e ricarica la pagina')}}
 
 async function loadReports(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
-try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(1000).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).orderBy('data','desc').limit(2000).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
 }
 
 function rOggi(){var oggi=oggiRoma();var ms=oggi.substring(0,7);
