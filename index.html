@@ -192,7 +192,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="date-hint">Puoi inserire consegne dal 1° aprile ad oggi</div>
 </div>
 <div class="form-group"><label class="form-label">Filiale</label><select id="ncFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
-<div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
+<div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input" onchange="prefillOraInizio()"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
 <div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="10"><div class="num-hint">Massimo 10 consegne per fascia</div></div>
 <div class="form-group"><label class="form-label">Orario del giro</label>
 <div style="display:flex;gap:10px">
@@ -278,7 +278,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);font-size:12px;color:var(--text2);line-height:1.6">
 <strong>Come si guadagnano punti</strong><br>
 📦 1 consegna = 1 punto<br>
-⚡ Velocità: tempo medio sotto 20 min/consegna = +30 pt, sotto 25 min = +15 pt (serve registrare gli orari del giro)<br>
+⚡ Velocità: tempo medio sotto 20 min/consegna = +30 pt, sotto 25 min = +15 pt (conta da 10 consegne con orari registrati nel mese)<br>
 🛡️ Zero danni nel mese = +50 pt · ogni danno = −30 pt<br>
 <span style="color:var(--text3);font-size:11px;display:block;margin-top:8px">🔒 La classifica è anonima (nickname) e riservata ai driver AVR: non condividerla con nessuno al di fuori dell'azienda.</span>
 </div>
@@ -392,12 +392,12 @@ showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
 var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;if(msTo1am<0)msTo1am+=86400000;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
 
 // Imposta data di oggi nel campo data
-function setOggi(){document.getElementById('ncData').value=new Date().toISOString().slice(0,10)}
+function setOggi(){document.getElementById('ncData').value=oggiRoma()}
 
 // Inizializza limiti data (dal 1 aprile a oggi)
 function initDateLimits(){
     var inp=document.getElementById('ncData');
-    var oggi=new Date().toISOString().slice(0,10);
+    var oggi=oggiRoma();
     inp.value=oggi;
     inp.max=oggi;
     inp.min='2026-04-01';
@@ -417,10 +417,10 @@ await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi
 async function loadFl(){try{var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}catch(e){console.error('loadFl error:',e);showToast('Impossibile caricare le filiali — verifica la connessione e ricarica la pagina')}}
 
 async function loadReports(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
-try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(200).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
+try{var s=await db.collection('reportDriver').where('driverEmail','==',em).limit(1000).get();reports=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x});reports.sort(function(a,b){var da=a.data instanceof Date?a.data:new Date(a.data);var db_=b.data instanceof Date?b.data:new Date(b.data);return db_-da})}catch(e){console.error('loadReports error:',e);reports=[];showToast('Impossibile caricare le consegne — verifica la connessione: '+errMsg(e))}
 }
 
-function rOggi(){var oggi=new Date().toISOString().slice(0,10);var ms=oggi.substring(0,7);
+function rOggi(){var oggi=oggiRoma();var ms=oggi.substring(0,7);
 var consOggi=0,consMese=0,ritorniMese=0;
 reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
 ritorniList.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.toISOString().slice(0,7);if(m===ms)ritorniMese+=(r.numRitorni||0)});
@@ -482,6 +482,12 @@ async function salvaReport(){
     if(durataMin<=0){showToast('L\'ora di fine deve essere dopo l\'inizio');return}
     if(durataMin>720){showToast('Durata giro superiore a 12 ore — controlla gli orari');return}
     if(durataMin<num*2){showToast('Durata troppo breve per '+num+' consegne — controlla gli orari');return}
+    // Check soft: orario coerente con la fascia selezionata (fascia 2h, tolleranza 1h prima/dopo)
+    var fasciaStart=minutiTra('00:00',fas);
+    var inizioMin=minutiTra('00:00',oraInizio);
+    if(inizioMin<fasciaStart-60||inizioMin>fasciaStart+180){
+        if(!confirm('Hai selezionato la fascia '+fas+' ma il giro inizia alle '+oraInizio+'.\nConfermi che gli orari sono corretti?'))return;
+    }
 
     // Validazione data: non prima del 1 aprile, non dopo oggi
     var selDate=new Date(dataStr+'T12:00:00');
@@ -525,10 +531,13 @@ async function salvaReport(){
     }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaReport',false,'✓ Conferma consegne')}
 }
 
-function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('ncOraInizio').value='';document.getElementById('ncOraFine').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits()}
+function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('ncOraInizio').value='';document.getElementById('ncOraFine').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits();prefillOraInizio()}
 
 // Minuti tra due orari HH:MM (stesso giorno)
 function minutiTra(inizio,fine){var pi=inizio.split(':'),pf=fine.split(':');return (parseInt(pf[0])*60+parseInt(pf[1]))-(parseInt(pi[0])*60+parseInt(pi[1]))}
+
+// Precompila l'ora di inizio giro con l'inizio della fascia selezionata
+function prefillOraInizio(){var inp=document.getElementById('ncOraInizio');if(!inp.value)inp.value=document.getElementById('ncFascia').value}
 
 // Formatta minuti in "1h 25m" / "45m"
 function fmtDurata(min){if(min==null||isNaN(min))return '—';min=Math.round(min);var h=Math.floor(min/60),m=min%60;return h>0?h+'h '+m+'m':m+'m'}
@@ -555,6 +564,12 @@ function meseCorrenteRoma(){
     return y+'-'+m;
 }
 
+// Data di oggi YYYY-MM-DD in TZ Europe/Rome (toISOString è UTC: tra
+// mezzanotte e le 2 slitterebbe al giorno precedente).
+function oggiRoma(){
+    return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+}
+
 function renderTrendMobile(posPrec,posCorrente){
     if(posPrec==null) return '<span class="lb-trend new">NEW</span>';
     var delta=posPrec-posCorrente;
@@ -579,8 +594,24 @@ function setLeaderboardHtml(html){
     var el2=document.getElementById('leaderboardTab');if(el2)el2.innerHTML=html;
 }
 
+// Hash anonimo della propria email — stesso algoritmo della Cloud Function
+// (sha256 primi 16 hex): serve a riconoscere la propria riga in classifica
+// senza che il documento contenga nomi reali.
+var myLbHash=null;
+async function getMyLbHash(){
+    if(myLbHash)return myLbHash;
+    try{
+        var email=(auth.currentUser&&auth.currentUser.email||'').toLowerCase().trim();
+        if(!email||!window.crypto||!crypto.subtle)return null;
+        var buf=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(email));
+        myLbHash=Array.from(new Uint8Array(buf)).map(function(b){return b.toString(16).padStart(2,'0')}).join('').slice(0,16);
+    }catch(e){console.warn('hash:',e.message)}
+    return myLbHash;
+}
+
 async function loadLeaderboard(){
     var meseCorrente=meseCorrenteRoma();
+    var myHash=await getMyLbHash();
     var myName=(dp.cognome||'').toUpperCase().trim();
 
     try{
@@ -602,17 +633,20 @@ async function loadLeaderboard(){
         var sorted=data.drivers||[];
         var totalDrivers=data.totalDrivers||sorted.length;
 
+        // Match "SEI TU": nuovo formato anonimo via hash, legacy via cognome
+        function isMyEntry(entry){return entry.h?(myHash&&entry.h===myHash):entry.driver===myName}
+
         var myPos=-1;
-        sorted.forEach(function(entry,i){if(entry.driver===myName)myPos=i});
+        sorted.forEach(function(entry,i){if(isMyEntry(entry))myPos=i});
 
         var top10=sorted.slice(0,10);
         var html='';
         top10.forEach(function(entry,i){
             var pos=i+1;
-            var isMe=entry.driver===myName;
+            var isMe=isMyEntry(entry);
             var posClass=i===0?'gold':i===1?'silver':i===2?'bronze':'normal';
             var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(pos);
-            var nick=getNickname(entry.driver);
+            var nick=getNickname(entry.h||entry.driver||'');
             var youTag=isMe?'<span class="lb-you">SEI TU!</span>':'';
             var bonusTag=(entry.bonusVelocita>0?'<span class="lb-bonus" title="Bonus velocità">⚡</span>':'')+(entry.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'');
             var trend=renderTrendMobile(entry.posPrec,pos);
@@ -632,7 +666,7 @@ async function loadLeaderboard(){
             var percentile=Math.max(1,Math.round((1-myPos/totalDrivers)*100));
             html+='<div class="lb-row me" style="border-top:2px dashed var(--border)">'+
                 '<div class="lb-pos normal">'+(myPos+1)+'°</div>'+
-                '<div class="lb-nick">'+getNickname(myName)+myBonus+'<span class="lb-you">SEI TU!</span>'+
+                '<div class="lb-nick">'+getNickname(myData.h||myName)+myBonus+'<span class="lb-you">SEI TU!</span>'+
                   '<div class="lb-trend-wrap">'+myTrend+' · top '+percentile+'%</div>'+
                 '</div>'+
                 '<div class="lb-score">'+myData.score+' <span>punti</span></div>'+
@@ -641,7 +675,7 @@ async function loadLeaderboard(){
             // Sono autenticato ma non in classifica → driver senza consegne nel mese
             html+='<div class="lb-row" style="border-top:2px dashed var(--border);opacity:.7">'+
                 '<div class="lb-pos normal">—</div>'+
-                '<div class="lb-nick">'+getNickname(myName)+'<span class="lb-you">SEI TU!</span>'+
+                '<div class="lb-nick">'+getNickname(myHash||myName)+'<span class="lb-you">SEI TU!</span>'+
                   '<div class="lb-trend-wrap" style="font-size:10px;color:var(--text3)">Registra consegne per entrare</div>'+
                 '</div>'+
                 '<div class="lb-score">0 <span>punti</span></div>'+
