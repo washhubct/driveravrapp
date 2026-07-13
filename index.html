@@ -224,7 +224,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="form-group"><label class="form-label">Data ritorno</label>
 <div class="date-picker-row">
 <input type="date" id="rtData" class="input" style="margin-bottom:0">
-<button type="button" class="date-today-btn" onclick="document.getElementById('rtData').value=new Date().toISOString().slice(0,10)">Oggi</button>
+<button type="button" class="date-today-btn" onclick="document.getElementById('rtData').value=oggiRoma()">Oggi</button>
 </div></div>
 <div class="form-group"><label class="form-label">Filiale di origine</label>
 <select id="rtFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
@@ -387,12 +387,29 @@ async function logAccessoDriver(user){if(loggingAccesso)return;loggingAccesso=tr
 auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';logAccessoDriver(u);init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
-function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('targaInput').focus()}
-async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;if(turnoConfermato){showToast('Turno già avviato con '+targaOggi+' — usa "cambia" per modificare la targa');return}var t=document.getElementById('targaInput').value.trim().toUpperCase();if(!t||t.length<5){showToast('Inserisci una targa valida');return}setBtn('btnTarga',true,'Avvio turno...');document.getElementById('btnAnnullaTarga').style.display='block';targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;maybeShowLbIntro();
-try{if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}submitting=true;var oggi=new Date();await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggi.toISOString().slice(0,10),oraInizio:oggi.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true;}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
-showToast('Turno iniziato con '+targaOggi);checkProfiloAlert();
-// Auto-logout alle 01:00
-var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,1,0,0);var msTo1am=logout1am-now;if(msTo1am<0)msTo1am+=86400000;setTimeout(function(){targaOggi='';auth.signOut();location.reload()},msTo1am)}
+function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('btnAnnullaTarga').style.display=turnoConfermato?'block':'none';document.getElementById('targaInput').focus()}
+
+// Auto-logout alla prossima 01:00 (schedulato una sola volta per sessione)
+var autoLogoutTimer=null;
+function scheduleAutoLogout(){
+if(autoLogoutTimer)return;
+var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.getDate(),1,0,0);
+if(logout1am<=now)logout1am.setDate(logout1am.getDate()+1);
+autoLogoutTimer=setTimeout(function(){targaOggi='';auth.signOut();location.reload()},logout1am-now)}
+
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;
+var t=document.getElementById('targaInput').value.trim().toUpperCase();
+if(!t||t.length<5){showToast('Inserisci una targa valida');return}
+if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}
+var cambio=turnoConfermato;
+if(cambio&&t===targaOggi){chiudiTargaModal();return}
+submitting=true;setBtn('btnTarga',true,cambio?'Aggiorno...':'Avvio turno...');
+targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
+if(!cambio)maybeShowLbIntro();
+try{await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggiRoma(),oraInizio:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
+showToast(cambio?'Mezzo aggiornato: '+targaOggi:'Turno iniziato con '+targaOggi);
+if(!cambio)checkProfiloAlert();
+scheduleAutoLogout()}
 
 // Imposta data di oggi nel campo data
 function setOggi(){document.getElementById('ncData').value=oggiRoma()}
@@ -445,7 +462,7 @@ var el3=document.getElementById('listaRitorni');
 if(!ritorniList.length){el3.innerHTML='<div class="empty" style="padding:16px"><p style="font-size:12px;color:var(--text3)">Nessun ritorno registrato</p></div>'}
 else{el3.innerHTML=ritorniList.map(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});var fNome=getFilialeNome(r.filiale);var statoHtml=r.stato==='accettato'?'<span class="report-badge" style="background:#f0fdf4;color:#16a34a">✓ Accettato</span>':r.stato==='rifiutato'?'<span class="report-badge" style="background:#fef2f2;color:#dc2626">✕ Rifiutato</span>':'<span class="report-badge" style="background:#fef3c7;color:#d97706">⏳ In attesa</span>';return'<div class="report-card">'+(r.stato!=='accettato'&&r.stato!=='rifiutato'?'<button class="btn-delete" onclick="eliminaRitorno(\''+r.id+'\')" title="Elimina">✕</button>':'')+'<div class="report-top"><div class="report-filiale">🔄 '+fNome+'</div></div><div class="report-bottom"><span class="report-badge">📅 '+ds+'</span>'+statoHtml+'<span class="report-badge">'+escapeHtml(r.motivoLabel||r.motivo||'')+'</span><span class="report-badge">👤 '+escapeHtml(r.cliente||'—')+'</span></div></div>'}).join('')}}
 
-function reportCard(r){var now=new Date();var cr=r.data instanceof Date?r.data:new Date(r.data);var ore=(now-cr)/(1000*60*60);var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span>'+(r.durataMin?'<span class="report-badge">⏱ '+fmtDurata(r.durataMin)+' · ~'+fmtDurata(r.tempoMedioMin||r.durataMin/(r.numConsegne||1))+'/consegna</span>':'')+'</div>';if(r.note){h+='<div class="report-note">'+escapeHtml(r.note)+'</div>'}h+='</div>';return h}
+function reportCard(r){var filialeNome=getFilialeNome(r.filiale);var h='<div class="report-card">';h+='<button class="btn-delete" onclick="eliminaReport(\''+r.id+'\')" title="Elimina">✕</button>';h+='<div class="report-top"><div class="report-filiale">'+filialeNome+'</div><div class="report-count">'+(r.numConsegne||0)+' <span>consegne</span></div></div><div class="report-bottom"><span class="report-badge">'+(r.fascia||'')+'</span><span class="report-badge">🚐 '+(r.targa||'—')+'</span>'+(r.durataMin?'<span class="report-badge">⏱ '+fmtDurata(r.durataMin)+' · ~'+fmtDurata(r.tempoMedioMin||r.durataMin/(r.numConsegne||1))+'/consegna</span>':'')+'</div>';if(r.note){h+='<div class="report-note">'+escapeHtml(r.note)+'</div>'}h+='</div>';return h}
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
@@ -698,7 +715,7 @@ async function loadLeaderboard(){
 
 function showMotivational(){
     var el=document.getElementById('motivationalBanner');
-    var oggi=new Date().toISOString().slice(0,10);
+    var oggi=oggiRoma();
     var consOggi=0,consMese=0;
     reports.forEach(function(r){
         var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);
@@ -812,7 +829,7 @@ function escapeHtml(t){if(!t)return '';return String(t).replace(/&/g,'&amp;').re
 function showToast(m){var e=document.createElement('div');e.className='toast';e.textContent=m;document.body.appendChild(e);setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},300)},3000)}
 function setBtn(id,busy,idleLabel){var b=document.getElementById(id);if(!b)return;b.disabled=busy;if(!busy&&idleLabel)b.textContent=idleLabel}
 function errMsg(e){return(e&&e.message)?e.message:'Riprova'}
-function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi){document.getElementById('appView').style.display='flex';maybeShowLbIntro()}setBtn('btnAnnullaTarga',false);document.getElementById('btnAnnullaTarga').style.display='none'}
+function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi){document.getElementById('appView').style.display='flex';maybeShowLbIntro()}document.getElementById('btnAnnullaTarga').style.display='none'}
 window.addEventListener('offline',function(){document.getElementById('offlineBanner').style.display='block'});
 window.addEventListener('online',function(){document.getElementById('offlineBanner').style.display='none'});
 
@@ -826,6 +843,7 @@ async function loadRitorni(){
     try{
         var s=await db.collection('ritorni').where('driverEmail','==',em).limit(100).get();
         ritorniList=s.docs.map(function(d){var x=d.data();x.id=d.id;if(x.data&&x.data.toDate)x.data=x.data.toDate();return x}).filter(function(x){return!!x.data});
+        ritorniList.sort(function(a,b){return new Date(b.data)-new Date(a.data)});
     }catch(e){console.error('loadRitorni error:',e);ritorniList=[];showToast('Errore caricamento ritorni')}
 }
 
@@ -838,7 +856,7 @@ function resetRitorno(){
     document.getElementById('formRitorno').style.display='block';
     document.getElementById('rtSuccess').style.display='none';
     var inp=document.getElementById('rtData');
-    var oggi=new Date().toISOString().slice(0,10);
+    var oggi=oggiRoma();
     inp.value=oggi;inp.max=oggi;inp.min='2026-04-01';
     var sel=document.getElementById('rtFiliale');
     sel.innerHTML='<option value="">Seleziona filiale...</option>';
@@ -957,7 +975,7 @@ async function inviaSegnalazione(){
     if(!tipo){showToast('Seleziona il tipo di problema');return}
     if(!descrizione){showToast('Descrivi il problema');return}
 
-    var oggi=new Date().toISOString().slice(0,10);
+    var oggi=oggiRoma();
     var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)&&(s.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupSeg){showToast('Hai già inviato questa segnalazione oggi');return}
 
@@ -990,7 +1008,7 @@ async function inviaSegnalazione(){
         targa:targaOggi,
         area:dp.citta||'??',
         stato:'aperta',
-        data:new Date().toISOString().slice(0,10),
+        data:oggiRoma(),
         timestamp:firebase.firestore.FieldValue.serverTimestamp()
     };
 
@@ -1019,25 +1037,25 @@ async function loadSegnalazioni(){
     var el=document.getElementById('listaSegnalazioni');
     var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();
     try{
-        var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(20).get();
+        var snap=await db.collection('segnalazioni').where('driverEmail','==',em).limit(100).get();
         segnalazioniList=snap.docs.map(function(doc){var x=doc.data();x.id=doc.id;return x});
-        if(snap.empty){
+        segnalazioniList.sort(function(a,b){var d=(b.data||'').localeCompare(a.data||'');if(d)return d;var ta=a.timestamp&&a.timestamp.toMillis?a.timestamp.toMillis():0,tb=b.timestamp&&b.timestamp.toMillis?b.timestamp.toMillis():0;return tb-ta});
+        if(!segnalazioniList.length){
             el.innerHTML='<div class="empty" style="padding:20px"><div class="empty-icon">✅</div><p>Nessuna segnalazione</p></div>';
             return;
         }
         var html='';
-        snap.forEach(function(doc){
-            var d=doc.data();
+        segnalazioniList.slice(0,20).forEach(function(d){
             var statoClass=d.stato==='risolta'?'risolta':'aperta';
             var statoLabel=d.stato==='risolta'?'Risolta':'In attesa';
             html+='<div class="seg-card">'+
                 '<div class="seg-card-top">'+
-                    '<div class="seg-tipo">'+(d.tipoLabel||d.tipo)+'</div>'+
+                    '<div class="seg-tipo">'+escapeHtml(d.tipoLabel||d.tipo)+'</div>'+
                     '<span class="seg-stato '+statoClass+'">'+statoLabel+'</span>'+
                 '</div>'+
                 '<div class="seg-desc">'+escapeHtml(d.descrizione)+'</div>'+
                 '<div class="seg-meta">'+escapeHtml(d.filialeNome?d.filialeNome+' · ':'')+escapeHtml(d.data)+'</div>'+
-                (d.foto?'<img src="'+d.foto+'" class="seg-foto-thumb">':'')+
+                (d.foto&&/^data:image\//.test(d.foto)?'<img src="'+d.foto+'" class="seg-foto-thumb">':'')+
             '</div>';
         });
         el.innerHTML=html;
