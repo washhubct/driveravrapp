@@ -1,11 +1,11 @@
 // Fetch dati Firestore + helper condivisi sulle filiali.
-import { auth, db } from './firebase.js';
+import { auth, db, collection, query, where, orderBy, limit, getDocs } from './firebase.js';
 import { S } from './state.js';
 import { showToast, errMsg } from './utils.js';
 
 export async function loadFl() {
   try {
-    var s = await db.collection('filiali').get();
+    var s = await getDocs(collection(db, 'filiali'));
     S.fl = s.docs.map(function (d) { return Object.assign({ id: d.id }, d.data()) });
     populateFilialiSelect('ncFiliale');
   } catch (e) {
@@ -45,7 +45,7 @@ export async function loadReports() {
   var em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
   if (!em) return;
   try {
-    var s = await db.collection('reportDriver').where('driverEmail', '==', em).orderBy('data', 'desc').limit(2000).get();
+    var s = await getDocs(query(collection(db, 'reportDriver'), where('driverEmail', '==', em), orderBy('data', 'desc'), limit(2000)));
     S.reports = s.docs.map(function (d) {
       var x = d.data();
       x.id = d.id;
@@ -63,7 +63,7 @@ export async function loadRitorni() {
   var em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
   if (!em) return;
   try {
-    var s = await db.collection('ritorni').where('driverEmail', '==', em).limit(100).get();
+    var s = await getDocs(query(collection(db, 'ritorni'), where('driverEmail', '==', em), limit(100)));
     S.ritorniList = s.docs.map(function (d) {
       var x = d.data();
       x.id = d.id;

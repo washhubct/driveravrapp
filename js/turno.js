@@ -1,5 +1,5 @@
 // Turno: modal targa, avvio/cambio mezzo, auto-logout notturno.
-import { auth, db, FieldValue } from './firebase.js';
+import { auth, db, collection, addDoc, serverTimestamp, signOut } from './firebase.js';
 import { S } from './state.js';
 import { oggiRoma, showToast, setBtn, errMsg } from './utils.js';
 import { maybeShowLbIntro } from './views/classifica.js';
@@ -18,7 +18,7 @@ function scheduleAutoLogout() {
   var now = new Date();
   var logout1am = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 1, 0, 0);
   if (logout1am <= now) logout1am.setDate(logout1am.getDate() + 1);
-  S.autoLogoutTimer = setTimeout(function () { S.targaOggi = ''; auth.signOut(); location.reload() }, logout1am - now);
+  S.autoLogoutTimer = setTimeout(function () { S.targaOggi = ''; signOut(auth); location.reload() }, logout1am - now);
 }
 
 export async function confermaTarga() {
@@ -37,7 +37,7 @@ export async function confermaTarga() {
   document.getElementById('profTarga').textContent = S.targaOggi;
   if (!cambio) maybeShowLbIntro();
   try {
-    await db.collection('turniDriver').add({
+    await addDoc(collection(db, 'turniDriver'), {
       driver: (S.dp.cognome || '').toUpperCase(),
       driverNome: (S.dp.cognome || '') + ' ' + (S.dp.nome || ''),
       email: (auth.currentUser.email || '').toLowerCase(),
@@ -45,7 +45,7 @@ export async function confermaTarga() {
       citta: S.dp.citta || '??',
       data: oggiRoma(),
       oraInizio: new Date().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
-      timestamp: FieldValue.serverTimestamp()
+      timestamp: serverTimestamp()
     });
     S.turnoConfermato = true;
   } catch (e) {

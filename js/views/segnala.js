@@ -1,5 +1,5 @@
 // Tab "Segnala": segnalazioni problemi con foto opzionale.
-import { auth, db, FieldValue } from '../firebase.js';
+import { auth, db, collection, query, where, limit, getDocs, addDoc, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
 import { oggiRoma, escapeHtml, showToast, setBtn, errMsg } from '../utils.js';
 import { populateFilialiSelect } from '../data.js';
@@ -72,10 +72,10 @@ export async function inviaSegnalazione() {
       area: S.dp.citta || '??',
       stato: 'aperta',
       data: oggiRoma(),
-      timestamp: FieldValue.serverTimestamp()
+      timestamp: serverTimestamp()
     };
 
-    await db.collection('segnalazioni').add(rec);
+    await addDoc(collection(db, 'segnalazioni'), rec);
     document.getElementById('formSegnala').style.display = 'none';
     document.getElementById('segSuccess').style.display = 'block';
     await loadSegnalazioni();
@@ -106,7 +106,7 @@ export async function loadSegnalazioni() {
   var el = document.getElementById('listaSegnalazioni');
   var em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
   try {
-    var snap = await db.collection('segnalazioni').where('driverEmail', '==', em).limit(100).get();
+    var snap = await getDocs(query(collection(db, 'segnalazioni'), where('driverEmail', '==', em), limit(100)));
     S.segnalazioniList = snap.docs.map(function (doc) { var x = doc.data(); x.id = doc.id; return x });
     S.segnalazioniList.sort(function (a, b) {
       var d = (b.data || '').localeCompare(a.data || '');

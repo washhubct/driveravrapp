@@ -1,5 +1,5 @@
 // Tab "Ritorno": registrazione secondo viaggio presso il cliente.
-import { auth, db, Timestamp, FieldValue } from '../firebase.js';
+import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
 import { oggiRoma, showToast, setBtn, errMsg } from '../utils.js';
 import { loadRitorni, populateFilialiSelect } from '../data.js';
@@ -85,10 +85,10 @@ export async function salvaRitorno() {
       data: Timestamp.fromDate(selDate),
       mese: selDate.getFullYear() + '-' + String(selDate.getMonth() + 1).padStart(2, '0'),
       fonte: 'driver_app',
-      timestamp: FieldValue.serverTimestamp()
+      timestamp: serverTimestamp()
     };
 
-    await db.collection('ritorni').add(rec);
+    await addDoc(collection(db, 'ritorni'), rec);
     var dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
     document.getElementById('rtSuccessDetail').textContent = 'Ritorno per ' + cliente + ' · ' + (filialeNome || 'Filiale ' + filiale) + ' · ' + dataLabel;
     document.getElementById('formRitorno').style.display = 'none';

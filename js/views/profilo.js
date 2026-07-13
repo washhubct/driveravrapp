@@ -1,5 +1,5 @@
 // Tab "Profilo": dati personali, statistiche, alert profilo incompleto.
-import { auth, db, FieldValue } from '../firebase.js';
+import { auth, db, doc, updateDoc, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
 import { showToast, setBtn, errMsg } from '../utils.js';
 import { loadLeaderboard } from './classifica.js';
@@ -68,14 +68,14 @@ export async function salvaProfilo() {
   if (!tel) { showToast('Inserisci il numero di telefono'); S.submitting = false; setBtn('btnSalvaProfilo', false, '💾 Salva dati personali'); return }
 
   try {
-    await db.collection('driverAnagrafica').doc(S.dp.id).update({
+    await updateDoc(doc(db, 'driverAnagrafica', S.dp.id), {
       codiceFiscale: cf,
       numeroPatente: pat,
       scadenzaPatente: patScad || null,
       telefono: tel,
       dataNascita: nascita || null,
       indirizzo: indirizzo || null,
-      profiloCompletatoIl: FieldValue.serverTimestamp()
+      profiloCompletatoIl: serverTimestamp()
     });
     S.dp.codiceFiscale = cf; S.dp.numeroPatente = pat; S.dp.scadenzaPatente = patScad;
     S.dp.telefono = tel; S.dp.dataNascita = nascita; S.dp.indirizzo = indirizzo;

@@ -1,5 +1,5 @@
 // Autenticazione: login, reset password, logout, bootstrap post-login.
-import { auth, db, FieldValue } from './firebase.js';
+import { auth, db, collection, query, where, getDocs, addDoc, serverTimestamp, signInWithEmailAndPassword, signOut, onAuthStateChanged } from './firebase.js';
 import { S } from './state.js';
 import { cn, showToast } from './utils.js';
 import { loadFl, loadReports, loadRitorni } from './data.js';
@@ -12,7 +12,7 @@ export function doLogin() {
   var e = document.getElementById('loginEmail').value.trim(), p = document.getElementById('loginPw').value;
   document.getElementById('loginErr').textContent = '';
   if (!e || !p) { document.getElementById('loginErr').textContent = 'Inserisci email e password'; return }
-  auth.signInWithEmailAndPassword(e, p).catch(function (r) {
+  signInWithEmailAndPassword(auth, e, p).catch(function (r) {
     var m = 'Errore di accesso';
     if (r.code === 'auth/user-not-found' || r.code === 'auth/wrong-password' || r.code === 'auth/invalid-credential') m = 'Email o password non validi';
     if (r.code === 'auth/too-many-requests') m = 'Troppi tentativi';
@@ -55,7 +55,7 @@ export async function doReset() {
 
 export function doLogout() {
   S.targaOggi = '';
-  auth.signOut();
+  signOut(auth);
 }
 
 // Log accesso driver su Firestore (visibile in Dashboard > Log Accessi)
@@ -64,14 +64,14 @@ async function logAccessoDriver(user) {
   S.loggingAccesso = true;
   try {
     var ua = navigator.userAgent || '';
-    await db.collection('driverAccessLog').add({
+    await addDoc(collection(db, 'driverAccessLog'), {
       email: user.email,
       uid: user.uid,
       ruolo: 'driver',
       piattaforma: 'app-driver',
       dispositivo: /Mobile|Android|iPhone|iPad/i.test(ua) ? 'Mobile' : 'Desktop',
       browser: ua.length > 120 ? ua.substring(0, 120) : ua,
-      timestamp: FieldValue.serverTimestamp(),
+      timestamp: serverTimestamp(),
       data: new Date().toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })
     });
   } catch (e) {
@@ -84,7 +84,7 @@ async function logAccessoDriver(user) {
 async function initApp(email) {
   var s;
   try {
-    s = await db.collection('driverAnagrafica').where('email', '==', email.toLowerCase()).get();
+    s = await getDocs(query(collection(db, 'driverAnagrafica'), where('email', '==', email.toLowerCase())));
   } catch (e) {
     console.error('init error:', e);
     showToast('Errore di connessione — ricarica la pagina per riprovare');
@@ -101,8 +101,12 @@ async function initApp(email) {
     var box = document.createElement('div');
     box.id = 'noProfileOverlay';
     box.style.cssText = 'position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
-    box.innerHTML = '<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Account non abilitato</div><div style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:8px">L\'email <strong style="color:#0f1d3d">' + email + '</strong> non è ancora abilitata all\'app driver.</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:20px">Contatta l\'amministrazione Last Mile per essere attivato:<br><a href="mailto:amministrazione@avrlogisticarl.com" style="color:#2563eb;font-weight:600;text-decoration:none">amministrazione@avrlogisticarl.com</a></div><button onclick="document.getElementById(\'noProfileOverlay\').remove();doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">← Torna al login</button></div>';
+    box.innerHTML = '<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">🔒</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Account non abilitato</div><div style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:8px">L\'email <strong style="color:#0f1d3d">' + email + '</strong> non è ancora abilitata all\'app driver.</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:20px">Contatta l\'amministrazione Last Mile per essere attivato:<br><a href="mailto:amministrazione@avrlogisticarl.com" style="color:#2563eb;font-weight:600;text-decoration:none">amministrazione@avrlogisticarl.com</a></div><button id="btnNoProfileBack" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">← Torna al login</button></div>';
     document.body.appendChild(box);
+    document.getElementById('btnNoProfileBack').addEventListener('click', function () {
+      box.remove();
+      doLogout();
+    });
     return;
   }
   document.getElementById('driverName').textContent = S.dp.cognome + ' ' + (S.dp.nome || '');
@@ -122,7 +126,7 @@ async function initApp(email) {
 }
 
 export function initAuthListener() {
-  auth.onAuthStateChanged(function (u) {
+  onAuthStateChanged(auth, function (u) {
     if (u) {
       document.getElementById('loginView').style.display = 'none';
       logAccessoDriver(u);
@@ -134,5 +138,4 @@ export function initAuthListener() {
       S.dp = null;
     }
   });
-  document.getElementById('loginPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin() });
 }

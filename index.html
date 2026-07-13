@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="apple-touch-icon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0f1d3d">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0f1d3d">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
@@ -20,14 +20,14 @@
 <div id="loginMain" class="login-main">
 <input type="email" id="loginEmail" class="input" placeholder="La tua email">
 <input type="password" id="loginPw" class="input" placeholder="Password">
-<button class="btn" onclick="doLogin()">Accedi</button>
-<button class="link" onclick="showReset()">Hai dimenticato la password?</button>
+<button id="btnLogin" class="btn">Accedi</button>
+<button id="btnShowReset" class="link">Hai dimenticato la password?</button>
 <div id="loginErr" class="error"></div></div>
 <div id="resetWrap" class="reset-wrap">
 <p style="font-size:14px;color:var(--text2);margin-bottom:16px">Inserisci la tua email e ti invieremo un link per reimpostare la password.</p>
 <input type="email" id="resetEmail" class="input" placeholder="La tua email">
-<button class="btn btn-blue" onclick="doReset()">Invia link di reset</button>
-<button class="btn btn-outline" onclick="hideReset()">Torna al login</button>
+<button id="btnDoReset" class="btn btn-blue">Invia link di reset</button>
+<button id="btnHideReset" class="btn btn-outline">Torna al login</button>
 <div id="resetMsg" class="error"></div></div>
 </div></div>
 <div id="lbIntroView" class="targa-overlay" style="display:none">
@@ -39,7 +39,7 @@
 <div class="intro-point"><span class="ic">⚡</span><span>Sei veloce? Tempo medio sotto i <strong>20 minuti</strong> a consegna = <strong>+30 punti</strong>, sotto i 25 = +15. Ricordati di inserire gli orari di inizio e fine giro!</span></div>
 <div class="intro-point"><span class="ic">🛡️</span><span>Zero danni nel mese = <strong>+50 punti</strong>. Ogni danno = −30.</span></div>
 <div class="intro-privacy"><strong>🔒 Riservata:</strong> la classifica è anonima (ognuno ha un nickname) ed è a uso esclusivo dei driver AVR. <strong>Non condividerla</strong> con nessuno al di fuori dell'azienda: niente screenshot su social o gruppi esterni.</div>
-<button class="btn btn-blue" onclick="chiudiLbIntro()" style="font-size:15px">Ho capito, si va! 🚀</button>
+<button id="btnLbIntroOk" class="btn btn-blue" style="font-size:15px">Ho capito, si va! 🚀</button>
 </div>
 </div>
 <div id="targaView" class="targa-overlay" style="display:none">
@@ -47,15 +47,15 @@
 <div class="targa-hello">👋</div>
 <div class="targa-name" id="targaHello">Ciao!</div>
 <div class="targa-sub">Indicami la targa del mezzo con cui inizierai il tuo turno</div>
-<input type="text" id="targaInput" class="targa-input" placeholder="AA000BB" maxlength="8" oninput="this.value=this.value.toUpperCase()">
-<button id="btnTarga" class="targa-btn" onclick="confermaTarga()">Inizia il turno →</button>
-<button class="btn btn-outline" onclick="chiudiTargaModal()" style="margin-top:10px;width:100%;display:none" id="btnAnnullaTarga">Annulla</button>
+<input type="text" id="targaInput" class="targa-input" placeholder="AA000BB" maxlength="8">
+<button id="btnTarga" class="targa-btn">Inizia il turno →</button>
+<button class="btn btn-outline" style="margin-top:10px;width:100%;display:none" id="btnAnnullaTarga">Annulla</button>
 </div></div>
 <div id="appView" class="app" style="display:none">
 <div id="offlineBanner" style="display:none;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:100">📵 Sei offline — verifica la connessione</div>
 <header class="app-header"><div class="header-top">
 <div class="header-logo"><img src="avr-logo.png" alt="Last Mile" style="height:32px"><div><div class="header-name" id="driverName">—</div><div class="header-city" id="driverCity">Driver</div></div></div>
-<button class="btn-out" onclick="doLogout()">Esci</button>
+<button id="btnLogout" class="btn-out">Esci</button>
 </div></header>
 <div class="app-body">
 <div id="tabOggi" class="screen active">
@@ -63,8 +63,8 @@
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseMedia">consegne</div></div></div>
 <div class="kpi-row" style="margin-top:-8px"><div class="kpi" style="border-color:rgba(217,119,6,0.3)"><div class="kpi-label" style="color:var(--warning)">🔄 Ritorni mese</div><div class="kpi-val" id="kRitorni" style="color:var(--warning)">0</div></div></div>
 <div style="display:flex;gap:10px;margin-bottom:20px">
-<button class="btn btn-blue" onclick="showTab('nuova')" style="flex:1;font-size:15px">+ Consegne</button>
-<button class="btn" onclick="showTab('ritorno')" style="flex:1;font-size:15px;background:var(--warning);color:#fff;border-color:var(--warning)">🔄 Ritorno</button>
+<button class="btn btn-blue" data-goto="nuova" style="flex:1;font-size:15px">+ Consegne</button>
+<button class="btn" data-goto="ritorno" style="flex:1;font-size:15px;background:var(--warning);color:#fff;border-color:var(--warning)">🔄 Ritorno</button>
 </div>
 <div class="section-title">Report di oggi</div><div id="listaOggi"></div>
 <div class="section-title" style="margin-top:24px">Report recenti</div><div id="listaRecenti"></div>
@@ -76,12 +76,12 @@
 <div class="form-group"><label class="form-label">Data consegna</label>
 <div class="date-picker-row">
 <input type="date" id="ncData" class="input" style="margin-bottom:0">
-<button type="button" class="date-today-btn" onclick="setOggi()">Oggi</button>
+<button type="button" id="btnNcOggi" class="date-today-btn">Oggi</button>
 </div>
 <div class="date-hint">Puoi inserire consegne dal 1° aprile ad oggi</div>
 </div>
 <div class="form-group"><label class="form-label">Filiale</label><select id="ncFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
-<div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input" onchange="prefillOraInizio()"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
+<div class="form-group"><label class="form-label">Fascia oraria</label><select id="ncFascia" class="input"><option value="10:00">10:00 – 12:00</option><option value="12:00">12:00 – 14:00</option><option value="14:00">14:00 – 16:00</option><option value="16:00">16:00 – 18:00</option><option value="18:00">18:00 – 20:00</option></select></div>
 <div class="form-group"><label class="form-label">Numero consegne</label><input type="number" id="ncNumero" class="num-input" placeholder="0" inputmode="numeric" min="1" max="10"><div class="num-hint">Massimo 10 consegne per fascia</div></div>
 <div class="form-group"><label class="form-label">Orario del giro</label>
 <div style="display:flex;gap:10px">
@@ -91,15 +91,15 @@
 <div class="num-hint">Ora di partenza dalla filiale e ora dell'ultima consegna</div>
 </div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label><input type="text" id="ncNote" class="input" placeholder="Problemi, ritardi, segnalazioni..."></div>
-<button id="btnSalvaReport" class="btn btn-success" onclick="salvaReport()" style="font-size:16px">✓ Conferma consegne</button>
-<button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
+<button id="btnSalvaReport" class="btn btn-success" style="font-size:16px">✓ Conferma consegne</button>
+<button class="btn btn-outline" data-goto="oggi">← Annulla</button>
 </div>
 <div id="successMsg" class="success-msg" style="display:none">
 <div class="success-icon">✅</div>
 <div class="success-text">Report registrato!</div>
 <div class="success-sub" id="successDetail"></div>
-<button class="btn btn-blue" onclick="resetNuova()" style="margin-top:20px">Registra altra fascia</button>
-<button class="btn btn-outline" onclick="showTab('oggi')">Torna alla home</button>
+<button id="btnNuovaAltra" class="btn btn-blue" style="margin-top:20px">Registra altra fascia</button>
+<button class="btn btn-outline" data-goto="oggi">Torna alla home</button>
 </div></div>
 <div id="tabRitorno" class="screen">
 <div id="formRitorno">
@@ -110,7 +110,7 @@
 <div class="form-group"><label class="form-label">Data ritorno</label>
 <div class="date-picker-row">
 <input type="date" id="rtData" class="input" style="margin-bottom:0">
-<button type="button" class="date-today-btn" onclick="document.getElementById('rtData').value=oggiRoma()">Oggi</button>
+<button type="button" id="btnRtOggi" class="date-today-btn">Oggi</button>
 </div></div>
 <div class="form-group"><label class="form-label">Filiale di origine</label>
 <select id="rtFiliale" class="input"><option value="">Seleziona filiale...</option></select></div>
@@ -138,15 +138,15 @@
 </select></div>
 <div class="form-group"><label class="form-label">Note (opzionale)</label>
 <input type="text" id="rtNote" class="input" placeholder="Dettagli aggiuntivi..."></div>
-<button id="btnSalvaRitorno" class="btn" onclick="salvaRitorno()" style="font-size:16px;background:var(--warning);color:#fff;border-color:var(--warning)">✓ Conferma ritorno</button>
-<button class="btn btn-outline" onclick="showTab('oggi')">← Annulla</button>
+<button id="btnSalvaRitorno" class="btn" style="font-size:16px;background:var(--warning);color:#fff;border-color:var(--warning)">✓ Conferma ritorno</button>
+<button class="btn btn-outline" data-goto="oggi">← Annulla</button>
 </div>
 <div id="rtSuccess" class="success-msg" style="display:none">
 <div class="success-icon">🔄</div>
 <div class="success-text">Ritorno registrato!</div>
 <div class="success-sub" id="rtSuccessDetail"></div>
-<button class="btn" onclick="resetRitorno()" style="margin-top:20px;background:var(--warning);color:#fff;border-color:var(--warning)">Registra altro ritorno</button>
-<button class="btn btn-outline" onclick="showTab('oggi')">Torna alla home</button>
+<button id="btnRitornoAltro" class="btn" style="margin-top:20px;background:var(--warning);color:#fff;border-color:var(--warning)">Registra altro ritorno</button>
+<button class="btn btn-outline" data-goto="oggi">Torna alla home</button>
 </div>
 </div>
 <div id="tabCompensi" class="screen">
@@ -177,7 +177,7 @@
 <div class="prof-name" id="profNome">—</div>
 <div class="prof-email" id="profEmail">—</div>
 <div class="prof-badges"><span class="prof-badge" id="profCitta">—</span><span class="prof-badge" id="profContratto">—</span></div>
-<div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span class="targa-change" onclick="showTargaModal()">cambia</span></div>
+<div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span id="btnCambiaTarga" class="targa-change">cambia</span></div>
 </div>
 <div class="section-title">I miei dati personali</div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
@@ -187,7 +187,7 @@
 <div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="profTelefono" class="input" placeholder="+39 333 1234567" inputmode="tel"></div>
 <div class="form-group"><label class="form-label">Data di Nascita</label><input type="date" id="profDataNascita" class="input"></div>
 <div class="form-group"><label class="form-label">Indirizzo di Residenza</label><input type="text" id="profIndirizzo" class="input" placeholder="Via Roma 1, 95100 Catania"></div>
-<button id="btnSalvaProfilo" class="btn btn-success" onclick="salvaProfilo()" style="font-size:15px">💾 Salva dati personali</button>
+<button id="btnSalvaProfilo" class="btn btn-success" style="font-size:15px">💾 Salva dati personali</button>
 </div>
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Giorni attivi</div><div class="kpi-val" id="profTotG">0</div></div></div>
@@ -218,21 +218,21 @@
 <div class="form-group"><label class="form-label">Descrizione</label>
 <textarea id="segDescrizione" class="input" rows="3" placeholder="Descrivi il problema in dettaglio..." style="resize:vertical;min-height:80px"></textarea></div>
 <div class="form-group"><label class="form-label">Foto (opzionale)</label>
-<div class="foto-upload" id="fotoUploadZone" onclick="document.getElementById('segFoto').click()">
-<input type="file" id="segFoto" accept="image/*" capture="environment" style="display:none" onchange="previewFoto(this)">
+<div class="foto-upload" id="fotoUploadZone">
+<input type="file" id="segFoto" accept="image/*" capture="environment" style="display:none">
 <div id="fotoPreview" class="foto-preview">
 <span style="font-size:32px">📷</span>
 <span style="font-size:13px;color:var(--text3)">Tocca per scattare o caricare foto</span>
 </div>
 </div></div>
-<button id="btnInviaSeg" class="btn btn-blue" onclick="inviaSegnalazione()" style="font-size:15px">📨 Invia segnalazione</button>
+<button id="btnInviaSeg" class="btn btn-blue" style="font-size:15px">📨 Invia segnalazione</button>
 </div>
 <div id="segSuccess" style="display:none" class="success-msg">
 <div class="success-icon">📨</div>
 <div class="success-text">Segnalazione inviata!</div>
 <div class="success-sub">L'amministrazione la esaminerà al più presto.</div>
-<button class="btn btn-blue" onclick="resetSegnala()" style="margin-top:20px">Nuova segnalazione</button>
-<button class="btn btn-outline" onclick="showTab('oggi')">Torna alla home</button>
+<button id="btnSegAltra" class="btn btn-blue" style="margin-top:20px">Nuova segnalazione</button>
+<button class="btn btn-outline" data-goto="oggi">Torna alla home</button>
 </div>
 </div>
 <div class="section-title" style="margin-top:8px">Le mie segnalazioni recenti</div>
@@ -240,24 +240,21 @@
 </div>
 </div>
 <nav class="bottom-nav">
-<button class="nav-tab active" onclick="showTab('oggi')" data-tab="oggi"><span class="nav-tab-icon">📦</span>Oggi</button>
-<button class="nav-tab" onclick="showTab('nuova')" data-tab="nuova"><span class="nav-tab-icon">➕</span>Nuova</button>
-<button class="nav-tab" onclick="showTab('classifica')" data-tab="classifica"><span class="nav-tab-icon">🏆</span>Classifica</button>
-<button class="nav-tab" onclick="showTab('segnala')" data-tab="segnala"><span class="nav-tab-icon">⚠️</span>Segnala</button>
-<button class="nav-tab" onclick="showTab('compensi')" data-tab="compensi"><span class="nav-tab-icon">📊</span>Consegne</button>
-<button class="nav-tab" onclick="showTab('profilo')" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
+<button class="nav-tab active" data-tab="oggi"><span class="nav-tab-icon">📦</span>Oggi</button>
+<button class="nav-tab" data-tab="nuova"><span class="nav-tab-icon">➕</span>Nuova</button>
+<button class="nav-tab" data-tab="classifica"><span class="nav-tab-icon">🏆</span>Classifica</button>
+<button class="nav-tab" data-tab="segnala"><span class="nav-tab-icon">⚠️</span>Segnala</button>
+<button class="nav-tab" data-tab="compensi"><span class="nav-tab-icon">📊</span>Consegne</button>
+<button class="nav-tab" data-tab="profilo"><span class="nav-tab-icon">👤</span>Profilo</button>
 </nav></div>
 <div id="profileAlert" class="profile-alert" style="display:none">
 <div class="profile-alert-card">
 <div class="profile-alert-icon">📋</div>
 <div class="profile-alert-title">Completa il tuo profilo</div>
 <div class="profile-alert-text">Per continuare ad usare l'app, inserisci i tuoi dati personali: codice fiscale, patente e telefono.</div>
-<button class="btn btn-blue" onclick="chiudiAlertProfilo()">Completa ora →</button>
-<button class="btn btn-outline" onclick="rimandaAlertProfilo()">Più tardi</button>
+<button id="btnAlertCompleta" class="btn btn-blue">Completa ora →</button>
+<button id="btnAlertRimanda" class="btn btn-outline">Più tardi</button>
 </div>
 </div>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script type="module" src="js/main.js"></script>
 </body></html>

@@ -1,5 +1,5 @@
 // Tab "Oggi": KPI, report di oggi/recenti, ritorni recenti, banner motivazionale.
-import { auth, db } from '../firebase.js';
+import { auth, db, doc, deleteDoc } from '../firebase.js';
 import { S } from '../state.js';
 import { oggiRoma, escapeHtml, showToast, errMsg, fmtDurata } from '../utils.js';
 import { getFilialeNome, loadReports, loadRitorni } from '../data.js';
@@ -74,7 +74,7 @@ export function rOggi() {
         : r.stato === 'rifiutato' ? '<span class="report-badge" style="background:#fef2f2;color:#dc2626">✕ Rifiutato</span>'
         : '<span class="report-badge" style="background:#fef3c7;color:#d97706">⏳ In attesa</span>';
       return '<div class="report-card">' +
-        (r.stato !== 'accettato' && r.stato !== 'rifiutato' ? '<button class="btn-delete" onclick="eliminaRitorno(\'' + r.id + '\')" title="Elimina">✕</button>' : '') +
+        (r.stato !== 'accettato' && r.stato !== 'rifiutato' ? '<button class="btn-delete" data-del-ritorno="' + r.id + '" title="Elimina">✕</button>' : '') +
         '<div class="report-top"><div class="report-filiale">🔄 ' + fNome + '</div></div>' +
         '<div class="report-bottom"><span class="report-badge">📅 ' + ds + '</span>' + statoHtml +
         '<span class="report-badge">' + escapeHtml(r.motivoLabel || r.motivo || '') + '</span>' +
@@ -86,7 +86,7 @@ export function rOggi() {
 export function reportCard(r) {
   var filialeNome = getFilialeNome(r.filiale);
   var h = '<div class="report-card">';
-  h += '<button class="btn-delete" onclick="eliminaReport(\'' + r.id + '\')" title="Elimina">✕</button>';
+  h += '<button class="btn-delete" data-del-report="' + r.id + '" title="Elimina">✕</button>';
   h += '<div class="report-top"><div class="report-filiale">' + filialeNome + '</div><div class="report-count">' + (r.numConsegne || 0) + ' <span>consegne</span></div></div>' +
     '<div class="report-bottom"><span class="report-badge">' + (r.fascia || '') + '</span><span class="report-badge">🚐 ' + (r.targa || '—') + '</span>' +
     (r.durataMin ? '<span class="report-badge">⏱ ' + fmtDurata(r.durataMin) + ' · ~' + fmtDurata(r.tempoMedioMin || r.durataMin / (r.numConsegne || 1)) + '/consegna</span>' : '') + '</div>';
@@ -101,7 +101,7 @@ export async function eliminaReport(id) {
   if (!confirm('Vuoi eliminare questo report?')) return;
   S.submitting = true;
   try {
-    await db.collection('reportDriver').doc(id).delete();
+    await deleteDoc(doc(db, 'reportDriver', id));
     showToast('Report eliminato');
     await loadReports();
     rOggi(); rComp();
@@ -118,7 +118,7 @@ export async function eliminaRitorno(id) {
   if (!confirm('Vuoi eliminare questo ritorno?')) return;
   S.submitting = true;
   try {
-    await db.collection('ritorni').doc(id).delete();
+    await deleteDoc(doc(db, 'ritorni', id));
     showToast('Ritorno eliminato');
     await loadRitorni();
     rOggi();

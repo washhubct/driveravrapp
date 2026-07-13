@@ -1,5 +1,5 @@
 // Tab "Classifica": leaderboard anonima mensile (doc aggregato scritto da Cloud Function).
-import { auth, db } from '../firebase.js';
+import { auth, db, doc, getDoc } from '../firebase.js';
 import { S } from '../state.js';
 import { meseCorrenteRoma } from '../utils.js';
 import { showTab } from '../nav.js';
@@ -59,8 +59,8 @@ export async function loadLeaderboard() {
   var myName = (S.dp.cognome || '').toUpperCase().trim();
 
   try {
-    var doc = await db.collection('leaderboard').doc(meseCorrente).get();
-    if (!doc.exists || ((doc.data().drivers || []).length === 0)) {
+    var snap = await getDoc(doc(db, 'leaderboard', meseCorrente));
+    if (!snap.exists() || ((snap.data().drivers || []).length === 0)) {
       // Empty state motivante: distinguiamo "primo del mese / nessun report ancora"
       // dal "tu non hai ancora consegne" (basato su reports caricati)
       var hasMyReports = S.reports.some(function (r) {
@@ -73,7 +73,7 @@ export async function loadLeaderboard() {
       setLeaderboardHtml('<div class="empty" style="padding:20px"><div class="empty-icon">🏆</div><p>' + msg + '</p></div>');
       return;
     }
-    var data = doc.data();
+    var data = snap.data();
     var sorted = data.drivers || [];
     var totalDrivers = data.totalDrivers || sorted.length;
 

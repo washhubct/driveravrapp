@@ -1,5 +1,5 @@
 // Tab "Nuova": registrazione consegne per fascia.
-import { auth, db, Timestamp, FieldValue } from '../firebase.js';
+import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
 import { oggiRoma, showToast, setBtn, errMsg, minutiTra } from '../utils.js';
 import { loadReports } from '../data.js';
@@ -100,11 +100,11 @@ export async function salvaReport() {
     durataMin: durataMin,
     tempoMedioMin: Math.round(durataMin / num * 10) / 10,
     fonte: 'driver_app',
-    createdAt: FieldValue.serverTimestamp()
+    createdAt: serverTimestamp()
   };
 
   try {
-    await db.collection('reportDriver').add(rec);
+    await addDoc(collection(db, 'reportDriver'), rec);
     var dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
     document.getElementById('successDetail').textContent = num + ' consegne · ' + (filialeNome || 'Filiale ' + fil) + ' · ' + fas + ' · ' + dataLabel;
     document.getElementById('formNuova').style.display = 'none';
