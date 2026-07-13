@@ -1,28 +1,26 @@
 // Tab "Nuova": registrazione consegne per fascia.
 import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
-import { oggiRoma, showToast, setBtn, errMsg, minutiTra } from '../utils.js';
-import { loadReports } from '../data.js';
+import { oggiRoma, showToast, setBtn, errMsg, minutiTra, meseYM, dataRecord, initDateInput, validaDataInserimento } from '../utils.js';
+import { loadReports, getFiliale } from '../data.js';
 import { rOggi } from './oggi.js';
 import { rComp } from './compensi.js';
+
+let busy = false;
 
 // Imposta data di oggi nel campo data
 export function setOggi() {
   document.getElementById('ncData').value = oggiRoma();
 }
 
-// Inizializza limiti data (dal 1 aprile a oggi)
+// Inizializza limiti data (dalla finestra valida a oggi)
 export function initDateLimits() {
-  var inp = document.getElementById('ncData');
-  var oggi = oggiRoma();
-  inp.value = oggi;
-  inp.max = oggi;
-  inp.min = '2026-04-01';
+  initDateInput('ncData');
 }
 
 // Precompila l'ora di inizio giro con l'inizio della fascia selezionata
 export function prefillOraInizio() {
-  var inp = document.getElementById('ncOraInizio');
+  const inp = document.getElementById('ncOraInizio');
   if (!inp.value) inp.value = document.getElementById('ncFascia').value;
 }
 
@@ -39,51 +37,45 @@ export function resetNuova() {
 
 export async function salvaReport() {
   if (!auth.currentUser) { showToast('Sessione scaduta. Ricarica la pagina.'); return }
-  if (S.submitting) return;
-  var dataStr = document.getElementById('ncData').value;
-  var fil = document.getElementById('ncFiliale').value;
-  var fas = document.getElementById('ncFascia').value;
-  var num = parseInt(document.getElementById('ncNumero').value) || 0;
-  var note = document.getElementById('ncNote').value.trim();
-  var oraInizio = document.getElementById('ncOraInizio').value;
-  var oraFine = document.getElementById('ncOraFine').value;
+  if (busy) return;
+  const dataStr = document.getElementById('ncData').value;
+  const fil = document.getElementById('ncFiliale').value;
+  const fas = document.getElementById('ncFascia').value;
+  const num = parseInt(document.getElementById('ncNumero').value) || 0;
+  const note = document.getElementById('ncNote').value.trim();
+  const oraInizio = document.getElementById('ncOraInizio').value;
+  const oraFine = document.getElementById('ncOraFine').value;
 
-  if (!dataStr) { showToast('Seleziona la data'); return }
+  const vd = validaDataInserimento(dataStr);
+  if (!vd.ok) { showToast(vd.msg); return }
   if (!fil) { showToast('Seleziona la filiale'); return }
   if (!num || num < 1) { showToast('Inserisci almeno 1 consegna'); return }
   if (num > 10) { showToast('Massimo 10 consegne per fascia'); return }
   if (!oraInizio || !oraFine) { showToast('Inserisci ora di inizio e fine giro'); return }
-  var durataMin = minutiTra(oraInizio, oraFine);
+  const durataMin = minutiTra(oraInizio, oraFine);
   if (durataMin <= 0) { showToast('L\'ora di fine deve essere dopo l\'inizio'); return }
   if (durataMin > 720) { showToast('Durata giro superiore a 12 ore — controlla gli orari'); return }
   if (durataMin < num * 2) { showToast('Durata troppo breve per ' + num + ' consegne — controlla gli orari'); return }
   // Check soft: orario coerente con la fascia selezionata (fascia 2h, tolleranza 1h prima/dopo)
-  var fasciaStart = minutiTra('00:00', fas);
-  var inizioMin = minutiTra('00:00', oraInizio);
+  const fasciaStart = minutiTra('00:00', fas);
+  const inizioMin = minutiTra('00:00', oraInizio);
   if (inizioMin < fasciaStart - 60 || inizioMin > fasciaStart + 180) {
     if (!confirm('Hai selezionato la fascia ' + fas + ' ma il giro inizia alle ' + oraInizio + '.\nConfermi che gli orari sono corretti?')) return;
   }
 
-  // Validazione data: non prima del 1 aprile, non dopo oggi
-  var selDate = new Date(dataStr + 'T12:00:00');
-  var minDate = new Date('2026-04-01T00:00:00');
-  var maxDate = new Date(); maxDate.setHours(23, 59, 59);
-  if (selDate < minDate) { showToast('Non puoi inserire prima del 1° aprile'); return }
-  if (selDate > maxDate) { showToast('Non puoi inserire date future'); return }
-
-  var dup = S.reports.some(function (r) {
-    if (!r.data) return false;
-    var rd = r.data instanceof Date ? r.data : (r.data.toDate ? r.data.toDate() : new Date(r.data));
-    return rd.toDateString() === selDate.toDateString() && String(r.filiale) === fil && r.fascia === fas;
+  const selDate = vd.date;
+  const dup = S.reports.some(function (r) {
+    const rd = dataRecord(r);
+    return rd && rd.toDateString() === selDate.toDateString() && String(r.filiale) === fil && r.fascia === fas;
   });
   if (dup) { showToast('Hai già inserito questa fascia per la data selezionata'); return }
 
-  S.submitting = true;
+  busy = true;
   setBtn('btnSalvaReport', true, 'Salvataggio...');
-  var fd = S.fl.find(function (f) { return String(f.codice) === fil });
-  var filialeNome = fd && fd.nome ? fd.nome : '';
+  const fd = getFiliale(fil);
+  const filialeNome = fd && fd.nome ? fd.nome : '';
 
-  var rec = {
+  const rec = {
     filiale: fil,
     filialeNome: filialeNome,
     fascia: fas,
@@ -93,7 +85,7 @@ export async function salvaReport() {
     driverEmail: (auth.currentUser.email || '').toLowerCase(),
     targa: S.targaOggi,
     data: Timestamp.fromDate(selDate),
-    mese: selDate.getFullYear() + '-' + String(selDate.getMonth() + 1).padStart(2, '0'),
+    mese: meseYM(selDate),
     area: fd ? fd.area : (S.dp.citta || '??'),
     oraInizio: oraInizio,
     oraFine: oraFine,
@@ -105,7 +97,7 @@ export async function salvaReport() {
 
   try {
     await addDoc(collection(db, 'reportDriver'), rec);
-    var dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+    const dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
     document.getElementById('successDetail').textContent = num + ' consegne · ' + (filialeNome || 'Filiale ' + fil) + ' · ' + fas + ' · ' + dataLabel;
     document.getElementById('formNuova').style.display = 'none';
     document.getElementById('successMsg').style.display = 'block';
@@ -115,7 +107,7 @@ export async function salvaReport() {
     console.error('salvaReport error:', e);
     showToast('Errore: ' + errMsg(e));
   } finally {
-    S.submitting = false;
+    busy = false;
     setBtn('btnSalvaReport', false, '✓ Conferma consegne');
   }
 }

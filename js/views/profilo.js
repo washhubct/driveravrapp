@@ -1,23 +1,22 @@
 // Tab "Profilo": dati personali, statistiche, alert profilo incompleto.
+// Il render della classifica nella tab è orchestrato da nav.js (loadLeaderboard).
 import { auth, db, doc, updateDoc, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
-import { showToast, setBtn, errMsg } from '../utils.js';
-import { loadLeaderboard } from './classifica.js';
+import { showToast, setBtn, errMsg, recordYMD } from '../utils.js';
 import { showTab } from '../nav.js';
 
+let busy = false;
+
 export function rProf() {
-  var tot = 0, giorni = {};
+  let tot = 0;
+  const giorni = {};
   S.reports.forEach(function (r) {
     tot += (r.numConsegne || 0);
-    if ((r.numConsegne || 0) > 0) {
-      var d = r.data instanceof Date ? r.data.toISOString().slice(0, 10) : (r.data || '').substring(0, 10);
-      giorni[d] = true;
-    }
+    if ((r.numConsegne || 0) > 0) giorni[recordYMD(r)] = true;
   });
   document.getElementById('profTotC').textContent = tot;
   document.getElementById('profTotG').textContent = Object.keys(giorni).length;
   document.getElementById('profTarga').textContent = S.targaOggi || '—';
-  loadLeaderboard();
 }
 
 export function profiloCompleto() {
@@ -53,20 +52,22 @@ export function caricaDatiProfilo() {
 export async function salvaProfilo() {
   if (!auth.currentUser) { showToast('Sessione scaduta. Ricarica la pagina.'); return }
   if (!S.dp || !S.dp.id) { showToast('Errore: profilo non trovato'); return }
-  if (S.submitting) return;
-  S.submitting = true;
+  if (busy) return;
+
+  const cf = document.getElementById('profCF').value.trim().toUpperCase();
+  const pat = document.getElementById('profPatente').value.trim().toUpperCase();
+  const patScad = document.getElementById('profPatenteScad').value;
+  const tel = document.getElementById('profTelefono').value.trim();
+  const nascita = document.getElementById('profDataNascita').value;
+  const indirizzo = document.getElementById('profIndirizzo').value.trim();
+
+  // Validazioni PRIMA del lock: gli early-return non devono rilasciare nulla.
+  if (!cf || cf.length !== 16) { showToast('Codice fiscale non valido (16 caratteri)'); return }
+  if (!pat) { showToast('Inserisci il numero della patente'); return }
+  if (!tel) { showToast('Inserisci il numero di telefono'); return }
+
+  busy = true;
   setBtn('btnSalvaProfilo', true, 'Salvataggio...');
-  var cf = document.getElementById('profCF').value.trim().toUpperCase();
-  var pat = document.getElementById('profPatente').value.trim().toUpperCase();
-  var patScad = document.getElementById('profPatenteScad').value;
-  var tel = document.getElementById('profTelefono').value.trim();
-  var nascita = document.getElementById('profDataNascita').value;
-  var indirizzo = document.getElementById('profIndirizzo').value.trim();
-
-  if (!cf || cf.length !== 16) { showToast('Codice fiscale non valido (16 caratteri)'); S.submitting = false; setBtn('btnSalvaProfilo', false, '💾 Salva dati personali'); return }
-  if (!pat) { showToast('Inserisci il numero della patente'); S.submitting = false; setBtn('btnSalvaProfilo', false, '💾 Salva dati personali'); return }
-  if (!tel) { showToast('Inserisci il numero di telefono'); S.submitting = false; setBtn('btnSalvaProfilo', false, '💾 Salva dati personali'); return }
-
   try {
     await updateDoc(doc(db, 'driverAnagrafica', S.dp.id), {
       codiceFiscale: cf,
@@ -83,7 +84,7 @@ export async function salvaProfilo() {
   } catch (e) {
     showToast('Errore: ' + errMsg(e));
   } finally {
-    S.submitting = false;
+    busy = false;
     setBtn('btnSalvaProfilo', false, '💾 Salva dati personali');
   }
 }

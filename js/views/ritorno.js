@@ -1,9 +1,11 @@
 // Tab "Ritorno": registrazione secondo viaggio presso il cliente.
 import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
-import { oggiRoma, showToast, setBtn, errMsg } from '../utils.js';
-import { loadRitorni, populateFilialiSelect } from '../data.js';
+import { showToast, setBtn, errMsg, meseYM, dataRecord, initDateInput, validaDataInserimento } from '../utils.js';
+import { loadRitorni, populateFilialiSelect, getFiliale } from '../data.js';
 import { rOggi } from './oggi.js';
+
+let busy = false;
 
 export function resetRitorno() {
   document.getElementById('rtCliente').value = '';
@@ -13,47 +15,40 @@ export function resetRitorno() {
   document.getElementById('rtMotivo').value = '';
   document.getElementById('formRitorno').style.display = 'block';
   document.getElementById('rtSuccess').style.display = 'none';
-  var inp = document.getElementById('rtData');
-  var oggi = oggiRoma();
-  inp.value = oggi; inp.max = oggi; inp.min = '2026-04-01';
+  initDateInput('rtData');
   populateFilialiSelect('rtFiliale');
 }
 
 export async function salvaRitorno() {
   if (!auth.currentUser) { showToast('Sessione scaduta. Ricarica la pagina.'); return }
-  if (S.submitting) return;
-  var dataStr = document.getElementById('rtData').value;
-  var filiale = document.getElementById('rtFiliale').value;
-  var motivo = document.getElementById('rtMotivo').value;
-  var cliente = document.getElementById('rtCliente').value.trim();
-  var indirizzo = document.getElementById('rtIndirizzo').value.trim();
-  var citta = document.getElementById('rtCitta').value;
-  var note = document.getElementById('rtNote').value.trim();
+  if (busy) return;
+  const dataStr = document.getElementById('rtData').value;
+  const filiale = document.getElementById('rtFiliale').value;
+  const motivo = document.getElementById('rtMotivo').value;
+  const cliente = document.getElementById('rtCliente').value.trim();
+  const indirizzo = document.getElementById('rtIndirizzo').value.trim();
+  const citta = document.getElementById('rtCitta').value;
+  const note = document.getElementById('rtNote').value.trim();
 
-  if (!dataStr) { showToast('Seleziona la data'); return }
+  const vd = validaDataInserimento(dataStr);
+  if (!vd.ok) { showToast(vd.msg); return }
   if (!filiale) { showToast('Seleziona la filiale'); return }
   if (!motivo) { showToast('Seleziona il motivo'); return }
   if (!cliente) { showToast('Inserisci il nome del cliente'); return }
   if (!citta) { showToast('Seleziona la città'); return }
 
-  var selDate = new Date(dataStr + 'T12:00:00');
-  var minDate = new Date('2026-04-01T00:00:00');
-  var maxDate = new Date(); maxDate.setHours(23, 59, 59);
-  if (selDate < minDate) { showToast('Non puoi inserire prima del 1° aprile'); return }
-  if (selDate > maxDate) { showToast('Non puoi inserire date future'); return }
-
-  var dupRit = S.ritorniList.some(function (r) {
-    if (!r.data) return false;
-    var rd = r.data instanceof Date ? r.data : (r.data.toDate ? r.data.toDate() : new Date(r.data));
-    return rd.toDateString() === selDate.toDateString() && String(r.filiale) === filiale && r.motivo === motivo &&
+  const selDate = vd.date;
+  const dupRit = S.ritorniList.some(function (r) {
+    const rd = dataRecord(r);
+    return rd && rd.toDateString() === selDate.toDateString() && String(r.filiale) === filiale && r.motivo === motivo &&
       (r.cliente || '').toLowerCase().trim() === (cliente || '').toLowerCase().trim();
   });
   if (dupRit) { showToast('Hai già registrato questo ritorno per la data selezionata'); return }
 
-  S.submitting = true;
+  busy = true;
   setBtn('btnSalvaRitorno', true, 'Salvataggio...');
   try {
-    var motivoLabels = {
+    const motivoLabels = {
       merce_dimenticata: 'Merce dimenticata in filiale',
       cliente_assente: 'Cliente assente al primo tentativo',
       errore_ordine: 'Errore nell\'ordine',
@@ -61,10 +56,10 @@ export async function salvaRitorno() {
       altro: 'Altro'
     };
 
-    var fd = S.fl.find(function (f) { return String(f.codice) === filiale });
-    var filialeNome = fd && fd.nome ? fd.nome : '';
+    const fd = getFiliale(filiale);
+    const filialeNome = fd && fd.nome ? fd.nome : '';
 
-    var rec = {
+    const rec = {
       filiale: filiale,
       filialeNome: filialeNome,
       motivo: motivo,
@@ -83,13 +78,13 @@ export async function salvaRitorno() {
       costoDriver: S.cc,
       stato: 'da_fatturare',
       data: Timestamp.fromDate(selDate),
-      mese: selDate.getFullYear() + '-' + String(selDate.getMonth() + 1).padStart(2, '0'),
+      mese: meseYM(selDate),
       fonte: 'driver_app',
       timestamp: serverTimestamp()
     };
 
     await addDoc(collection(db, 'ritorni'), rec);
-    var dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+    const dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
     document.getElementById('rtSuccessDetail').textContent = 'Ritorno per ' + cliente + ' · ' + (filialeNome || 'Filiale ' + filiale) + ' · ' + dataLabel;
     document.getElementById('formRitorno').style.display = 'none';
     document.getElementById('rtSuccess').style.display = 'block';
@@ -100,7 +95,7 @@ export async function salvaRitorno() {
     console.error('salvaRitorno error:', e);
     showToast('Errore: ' + errMsg(e));
   } finally {
-    S.submitting = false;
+    busy = false;
     setBtn('btnSalvaRitorno', false, '✓ Conferma ritorno');
   }
 }

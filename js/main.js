@@ -10,9 +10,11 @@ import { previewFoto, inviaSegnalazione, resetSegnala } from './views/segnala.js
 import { chiudiLbIntro } from './views/classifica.js';
 import { salvaProfilo, chiudiAlertProfilo, rimandaAlertProfilo } from './views/profilo.js';
 
-function on(id, fn) {
-  var el = document.getElementById(id);
-  if (el) el.addEventListener('click', fn);
+// Binding con null-guard: un id mancante logga un warn invece di lanciare
+// TypeError a load-time e uccidere tutti i binding successivi.
+function on(id, fn, evt) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(evt || 'click', fn);
   else console.warn('bind mancante:', id);
 }
 
@@ -22,13 +24,13 @@ on('btnShowReset', showReset);
 on('btnDoReset', doReset);
 on('btnHideReset', hideReset);
 on('btnLogout', doLogout);
-document.getElementById('loginPw').addEventListener('keydown', function (e) { if (e.key === 'Enter') doLogin() });
+on('loginPw', function (e) { if (e.key === 'Enter') doLogin() }, 'keydown');
 
 // Turno / targa
 on('btnTarga', confermaTarga);
 on('btnAnnullaTarga', chiudiTargaModal);
 on('btnCambiaTarga', showTargaModal);
-document.getElementById('targaInput').addEventListener('input', function () { this.value = this.value.toUpperCase() });
+on('targaInput', function () { this.value = this.value.toUpperCase() }, 'input');
 
 // Classifica: popup intro
 on('btnLbIntroOk', chiudiLbIntro);
@@ -37,7 +39,7 @@ on('btnLbIntroOk', chiudiLbIntro);
 on('btnNcOggi', setOggi);
 on('btnSalvaReport', salvaReport);
 on('btnNuovaAltra', resetNuova);
-document.getElementById('ncFascia').addEventListener('change', prefillOraInizio);
+on('ncFascia', prefillOraInizio, 'change');
 
 // Ritorno
 on('btnRtOggi', function () { document.getElementById('rtData').value = oggiRoma() });
@@ -46,7 +48,7 @@ on('btnRitornoAltro', resetRitorno);
 
 // Segnalazioni
 on('fotoUploadZone', function () { document.getElementById('segFoto').click() });
-document.getElementById('segFoto').addEventListener('change', function () { previewFoto(this) });
+on('segFoto', function () { previewFoto(this) }, 'change');
 on('btnInviaSeg', inviaSegnalazione);
 on('btnSegAltra', resetSegnala);
 
@@ -65,14 +67,21 @@ document.querySelectorAll('[data-goto]').forEach(function (b) {
 
 // Delegation per i bottoni elimina nelle card generate dinamicamente
 document.addEventListener('click', function (e) {
-  var r = e.target.closest('[data-del-report]');
+  const r = e.target.closest('[data-del-report]');
   if (r) { eliminaReport(r.dataset.delReport); return }
-  var t = e.target.closest('[data-del-ritorno]');
+  const t = e.target.closest('[data-del-ritorno]');
   if (t) eliminaRitorno(t.dataset.delRitorno);
 });
 
-window.addEventListener('offline', function () { document.getElementById('offlineBanner').style.display = 'block' });
-window.addEventListener('online', function () { document.getElementById('offlineBanner').style.display = 'none' });
+// Banner offline: eventi + stato iniziale (l'app può avviarsi già offline
+// dalla cache del service worker, e in quel caso l'evento non scatta mai).
+function setOffline(off) {
+  const b = document.getElementById('offlineBanner');
+  if (b) b.style.display = off ? 'block' : 'none';
+}
+window.addEventListener('offline', function () { setOffline(true) });
+window.addEventListener('online', function () { setOffline(false) });
+setOffline(!navigator.onLine);
 
 initAuthListener();
 

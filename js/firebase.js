@@ -1,10 +1,14 @@
 // Firebase modular SDK v10 via CDN (nessun build step).
 // Unico punto che conosce versione e URL del CDN: gli altri moduli
 // importano tutto da qui.
+// firestore-LITE (~117KB vs ~437KB del bundle completo): l'app usa solo
+// get/add/update/delete, niente onSnapshot né persistenza offline. Lite è
+// REST puro: le write offline falliscono subito (gestite dai catch+toast)
+// invece di accodarsi in memoria.
 // La config DEVE matchare il progetto avr-logistic-dashboard (condiviso con la dashboard).
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-lite.js';
 
 const app = initializeApp({
   apiKey: "AIzaSyCleejDdWN6w41TcBw4fvyAPr_6rxU8Bgs",
@@ -26,4 +30,4 @@ export {
   collection, query, where, orderBy, limit,
   getDocs, getDoc, addDoc, updateDoc, deleteDoc, doc,
   serverTimestamp, Timestamp
-} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-lite.js';
