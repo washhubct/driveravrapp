@@ -68,15 +68,15 @@ export function renderTimbraturaCard() {
   const outs = S.timbratureOggi.filter(function (t) { return t.tipo === 'out' });
   const inStr = ins.length ? '🟢 IN ' + fmt(ins[0]) : '⚪ IN —';
   const outStr = outs.length ? '🔴 OUT ' + fmt(outs[outs.length - 1]) : '⚪ OUT —';
-  // L'ingresso richiede QR/NFC (anti-frode); l'uscita si può fare da qui,
-  // col geofence che marca `sospetto` chi è lontano dal punto.
-  const footer = ins.length
-    ? '<button class="btn" data-action="timbra-out" style="width:100%;margin-top:10px;background:var(--danger);font-size:14px;padding:12px">🔴 ' + (outs.length ? 'Aggiorna uscita' : 'Timbra uscita') + '</button>'
-    : '<div style="font-size:11px;color:var(--text3);margin-top:4px">Inquadra il QR in filiale con la fotocamera o avvicina il telefono al tag NFC</div>';
+  // Anti-frode su ENTRAMBI i versi: ingresso E uscita si timbrano solo
+  // fisicamente sul tag NFC / QR in filiale (nessuna scorciatoia in app).
+  const hint = ins.length && !outs.length
+    ? 'A fine giornata avvicina di nuovo il telefono al tag NFC (o inquadra il QR) per timbrare l\'uscita'
+    : 'Inquadra il QR in filiale con la fotocamera o avvicina il telefono al tag NFC';
   el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">' +
     '<div style="font-size:13px;font-weight:700;color:var(--navy)">🕐 Timbratura</div>' +
     '<div style="font-size:13px;font-weight:600">' + inStr + ' · ' + outStr + '</div></div>' +
-    footer;
+    '<div style="font-size:11px;color:var(--text3);margin-top:4px">' + hint + '</div>';
 }
 
 // Verso automatico: la prima timbratura del giorno è l'ingresso, dalla
@@ -266,29 +266,3 @@ async function scriviTimbratura(tipo, metodo, provincia, punto, tokenLetto) {
   await loadTimbratureOggi();
 }
 
-// Uscita dalla card nel tab Oggi: niente scansione (l'anti-frode forte è
-// sull'ingresso), ma geofence sempre verificato → metodo 'app-geo'.
-let busyOut = false;
-export async function timbraturaOutDaApp() {
-  if (!auth.currentUser || !S.dp) { showToast('Sessione non pronta. Ricarica la pagina.'); return }
-  if (busyOut) return;
-  if (!haInOggi()) { showToast('Prima timbra l\'ingresso con QR o tag NFC'); return }
-  const outGiaFatta = S.timbratureOggi.some(function (t) { return t.tipo === 'out' });
-  const msg = outGiaFatta ? 'Avevi già timbrato l\'uscita: aggiorno l\'orario a adesso?' : 'Timbrare l\'uscita adesso?';
-  if (!confirm(msg)) return;
-  busyOut = true;
-  try {
-    const prov = S.dp.citta;
-    let punto = null;
-    try {
-      const s = await getDoc(doc(db, 'puntiTimbratura', prov));
-      if (s.exists()) punto = s.data();
-    } catch (e) { /* geofence non disponibile → sospetto */ }
-    await scriviTimbratura('out', 'app-geo', prov, punto, null);
-  } catch (e) {
-    console.error('timbratura out error:', e);
-    showToast('Errore timbratura — riprova: ' + (e.message || ''));
-  } finally {
-    busyOut = false;
-  }
-}
