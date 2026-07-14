@@ -1,6 +1,6 @@
 # Last Mile Driver App
 
-Web app mobile (PWA) per i ~30 driver di **AVR Logistic / Last Mile**: registrazione consegne per fascia oraria, ritorni, segnalazioni con foto, classifica mensile anonima con premi, dati personali.
+Web app mobile (PWA) per i ~30 driver di **Last Mile** (ex AVR Logistic): registrazione consegne per fascia oraria, ritorni, segnalazioni con foto, classifica mensile anonima con premi, dati personali.
 
 - **Produzione:** https://appdriver.avrlogisticarl.com (GitHub Pages, custom domain)
 - **Backend:** Firebase `avr-logistic-dashboard` (Firestore + Auth), **condiviso** con la dashboard [`avr-delivery-hub`](https://github.com/washhubct/avr-delivery-hub)

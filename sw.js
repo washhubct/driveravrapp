@@ -2,13 +2,13 @@
 // Bump CACHE_VERSION ad ogni deploy: l'install riscarica l'intero shell
 // (moduli inclusi) bypassando la HTTP cache, così il set in cache è sempre
 // atomico e coerente con l'ultimo deploy.
-const CACHE_VERSION = 'lastmile-v4';
+const CACHE_VERSION = 'lastmile-v5';
 const SHELL = [
   './',
   './index.html',
   './css/app.css',
   './manifest.webmanifest',
-  './assets/avr-logo.png',
+  './assets/lastmile-logo.png',
   './assets/apple-touch-icon.png',
   './assets/icons/icon-192.png',
   './assets/icons/icon-512.png',
