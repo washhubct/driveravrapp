@@ -46,9 +46,8 @@
 <div class="targa-card">
 <div class="targa-hello">🕐</div>
 <div class="targa-name">Timbratura</div>
-<div class="targa-sub">Punto di <strong id="timbraProv">—</strong><br>Stai entrando o uscendo?</div>
-<button id="btnTimbraIn" class="targa-btn" style="background:var(--success);margin-bottom:10px">🟢 Timbra INGRESSO</button>
-<button id="btnTimbraOut" class="targa-btn" style="background:var(--danger)">🔴 Timbra USCITA</button>
+<div class="targa-sub">Punto di <strong id="timbraProv">—</strong><br><span id="timbraTipoLabel">—</span></div>
+<button id="btnTimbraGo" class="targa-btn">Conferma</button>
 <button id="btnTimbraAnnulla" class="btn btn-outline" style="margin-top:10px;width:100%">Annulla</button>
 </div></div>
 <div id="targaView" class="targa-overlay" style="display:none">
@@ -202,8 +201,6 @@
 </div>
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Giorni attivi</div><div class="kpi-val" id="profTotG">0</div></div></div>
-<div class="section-title" style="margin-top:20px">💶 Multe & Trattenute</div>
-<div id="listaDanni"></div>
 <div class="section-title" style="margin-top:20px">🏆 Classifica del mese</div>
 <div id="leaderboard" class="leaderboard"></div>
 </div>

@@ -17,8 +17,6 @@ export const S = {
   autoLogoutTimer: null,
   turnoDocId: null,      // doc turniDriver del turno aperto (per la chiusura)
   turnoOraInizio: null,  // HH:MM di inizio turno (per durataTurnoMin)
-  danniList: [],
-  danniLoaded: false,
   timbratureOggi: []
 };
 
@@ -39,7 +37,5 @@ export function resetSessionState() {
   S.lbCache = null;
   S.turnoDocId = null;
   S.turnoOraInizio = null;
-  S.danniList = [];
-  S.danniLoaded = false;
   S.timbratureOggi = [];
 }

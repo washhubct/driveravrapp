@@ -34,9 +34,8 @@ on('btnAnnullaTarga', chiudiTargaModal);
 on('btnCambiaTarga', showTargaModal);
 on('btnChiudiTurno', chiudiTurno);
 
-// Timbratura QR/NFC
-on('btnTimbraIn', function () { eseguiTimbratura('in') });
-on('btnTimbraOut', function () { eseguiTimbratura('out') });
+// Timbratura QR/NFC (verso automatico: 1ª del giorno = IN, poi OUT)
+on('btnTimbraGo', eseguiTimbratura);
 on('btnTimbraAnnulla', chiudiTimbraModal);
 on('targaInput', function () { this.value = this.value.toUpperCase() }, 'input');
 

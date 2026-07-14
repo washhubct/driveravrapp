@@ -2,12 +2,12 @@
 // Il render della classifica nella tab è orchestrato da nav.js (loadLeaderboard).
 import { auth, db, doc, updateDoc, serverTimestamp } from '../firebase.js';
 import { S } from '../state.js';
-import { showToast, setBtn, errMsg, recordYMD, escapeHtml } from '../utils.js';
-import { loadDanni } from '../data.js';
+import { showToast, setBtn, errMsg, recordYMD } from '../utils.js';
 import { showTab } from '../nav.js';
 
 let busy = false;
 
+// NOTA policy aziendale: niente importi € né multe/trattenute nell'app driver.
 export function rProf() {
   let tot = 0;
   const giorni = {};
@@ -18,36 +18,6 @@ export function rProf() {
   document.getElementById('profTotC').textContent = tot;
   document.getElementById('profTotG').textContent = Object.keys(giorni).length;
   document.getElementById('profTarga').textContent = S.targaOggi || '—';
-  if (S.danniLoaded) renderDanni();
-  else loadDanni().then(renderDanni);
-}
-
-function renderDanni() {
-  const el = document.getElementById('listaDanni');
-  if (!el) return;
-  if (!S.danniList.length) {
-    el.innerHTML = '<div class="empty" style="padding:16px"><p style="font-size:12px;color:var(--text3)">Nessuna multa o trattenuta 🎉</p></div>';
-    return;
-  }
-  el.innerHTML = S.danniList.map(function (d) {
-    const dataLabel = d.data ? new Date(d.data + 'T12:00:00').toLocaleDateString('it-IT', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
-    const chiuso = d.stato === 'chiuso' || d.stato === 'saldato' || (d.numRate > 1 && (d.ratePagate || 0) >= d.numRate);
-    const statoHtml = chiuso
-      ? '<span class="seg-stato risolta">Saldato</span>'
-      : '<span class="seg-stato aperta">' + escapeHtml(d.stato || 'aperto') + '</span>';
-    const rateHtml = d.numRate > 1
-      ? '<div class="seg-meta">Rate: ' + (d.ratePagate || 0) + '/' + d.numRate + ' pagate · €' + (d.importoRata || 0).toFixed(2) + '/mese</div>'
-      : '';
-    return '<div class="seg-card">' +
-      '<div class="seg-card-top">' +
-      '<div class="seg-tipo">' + escapeHtml(d.tipoSinistro || 'Danno') + ' · €' + (d.importo || 0).toFixed(2) + '</div>' +
-      statoHtml +
-      '</div>' +
-      (d.descrizione ? '<div class="seg-desc">' + escapeHtml(d.descrizione) + '</div>' : '') +
-      '<div class="seg-meta">' + dataLabel + (d.targa ? ' · 🚐 ' + escapeHtml(d.targa) : '') + '</div>' +
-      rateHtml +
-      '</div>';
-  }).join('');
 }
 
 export function profiloCompleto() {

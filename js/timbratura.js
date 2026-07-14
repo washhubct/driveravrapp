@@ -74,7 +74,14 @@ export function renderTimbraturaCard() {
     '<div style="font-size:11px;color:var(--text3);margin-top:4px">Inquadra il QR in filiale con la fotocamera o avvicina il telefono al tag NFC</div>';
 }
 
-// Chiamata al bootstrap: se l'app è stata aperta da QR/NFC mostra la scelta IN/OUT.
+// Verso automatico: la prima timbratura del giorno è l'ingresso, dalla
+// seconda in poi è l'uscita (l'ultima OUT vince nella riconciliazione).
+function tipoAutomatico() {
+  const haIn = S.timbratureOggi.some(function (t) { return t.tipo === 'in' });
+  return haIn ? 'out' : 'in';
+}
+
+// Chiamata al bootstrap: se l'app è stata aperta da QR/NFC mostra la conferma.
 export function initTimbratura() {
   const p = new URLSearchParams(location.search);
   const provincia = (p.get('timbra') || '').toUpperCase();
@@ -82,8 +89,14 @@ export function initTimbratura() {
   pendingParams = { provincia: provincia, token: p.get('t') || null, nfcUid: p.get('nfc') || null };
   history.replaceState(null, '', location.pathname); // evita ri-trigger su reload
   loadTimbratureOggi().then(function () {
-    // Preseleziona il verso più probabile: prima del turno = IN, dopo = OUT
+    const tipo = tipoAutomatico();
     document.getElementById('timbraProv').textContent = cn(pendingParams.provincia) + ' (' + pendingParams.provincia + ')';
+    document.getElementById('timbraTipoLabel').innerHTML = tipo === 'in'
+      ? 'Registro il tuo <strong style="color:var(--success)">INGRESSO</strong> 🟢'
+      : 'Registro la tua <strong style="color:var(--danger)">USCITA</strong> 🔴';
+    const btn = document.getElementById('btnTimbraGo');
+    btn.textContent = tipo === 'in' ? '🟢 Conferma INGRESSO' : '🔴 Conferma USCITA';
+    btn.style.background = tipo === 'in' ? 'var(--success)' : 'var(--danger)';
     document.getElementById('timbraView').style.display = 'flex';
   });
 }
@@ -95,13 +108,14 @@ export function chiudiTimbraModal() {
 
 let busy = false;
 
-export async function eseguiTimbratura(tipo) {
+export async function eseguiTimbratura() {
   if (!auth.currentUser || !S.dp) { showToast('Sessione non pronta. Ricarica la pagina.'); return }
   if (!pendingParams) { showToast('Apri l\'app dal QR o dal tag NFC in filiale'); return }
   if (busy) return;
   busy = true;
-  const btnId = tipo === 'in' ? 'btnTimbraIn' : 'btnTimbraOut';
-  const btn = document.getElementById(btnId);
+  const tipo = tipoAutomatico();
+  const btn = document.getElementById('btnTimbraGo');
+  const labelIdle = btn ? btn.textContent : '';
   if (btn) { btn.disabled = true; btn.textContent = 'Timbro...' }
 
   try {
@@ -138,9 +152,10 @@ export async function eseguiTimbratura(tipo) {
       note = 'GPS non disponibile';
     }
 
-    // 4. Anti doppione: stesso tipo già timbrato → chiedi conferma
-    const giaFatto = S.timbratureOggi.some(function (t) { return t.tipo === tipo });
-    if (giaFatto && !confirm('Hai già timbrato "' + tipo.toUpperCase() + '" oggi. Registrare comunque?')) return;
+    // 4. Uscita ripetuta: aggiorna l'orario di fine (l'ultima OUT vince),
+    //    ma chiedi conferma per evitare tap accidentali.
+    const outGiaFatta = tipo === 'out' && S.timbratureOggi.some(function (t) { return t.tipo === 'out' });
+    if (outGiaFatta && !confirm('Avevi già timbrato l\'uscita: aggiorno l\'orario a adesso?')) return;
 
     await addDoc(collection(db, 'timbrature'), {
       driverId: (auth.currentUser.email || '').toLowerCase(),
@@ -170,6 +185,6 @@ export async function eseguiTimbratura(tipo) {
     showToast('Errore timbratura — riprova: ' + (e.message || ''));
   } finally {
     busy = false;
-    if (btn) { btn.disabled = false; btn.textContent = tipo === 'in' ? '🟢 Timbra INGRESSO' : '🔴 Timbra USCITA' }
+    if (btn) { btn.disabled = false; btn.textContent = labelIdle }
   }
 }

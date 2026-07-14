@@ -64,24 +64,6 @@ export async function loadReports() {
   }
 }
 
-// Multe/danni del driver. NOTA: i doc danni creati dalla dashboard prima di
-// luglio 2026 non hanno driverEmail e non vengono restituiti (le rules
-// permettono la read-own solo su quel campo); la sezione si popola man mano
-// che la dashboard salva i nuovi danni col campo email.
-export async function loadDanni() {
-  const em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
-  if (!em) return;
-  try {
-    const s = await getDocs(query(collection(db, 'danni'), where('driverEmail', '==', em), limit(50)));
-    S.danniList = s.docs.map(function (d) { const x = d.data(); x.id = d.id; return x });
-    S.danniList.sort(function (a, b) { return (b.data || '').localeCompare(a.data || '') });
-    S.danniLoaded = true;
-  } catch (e) {
-    console.warn('loadDanni error:', e.message);
-    S.danniList = [];
-  }
-}
-
 export async function loadRitorni() {
   const em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
   if (!em) return;
