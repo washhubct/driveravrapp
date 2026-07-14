@@ -3,7 +3,7 @@ import { oggiRoma } from './utils.js';
 import { initAuthListener, doLogin, showReset, hideReset, doReset, doLogout } from './auth.js';
 import { showTargaModal, confermaTarga, chiudiTargaModal, chiudiTurno } from './turno.js';
 import { flushOutbox } from './offline.js';
-import { eseguiTimbratura, chiudiTimbraModal } from './timbratura.js';
+import { eseguiTimbratura, chiudiTimbraModal, ricontrollaTimbratura, timbraturaOutDaApp } from './timbratura.js';
 import { showTab } from './nav.js';
 import { eliminaReport, eliminaRitorno } from './views/oggi.js';
 import { setOggi, prefillOraInizio, salvaReport, resetNuova } from './views/nuova.js';
@@ -35,8 +35,11 @@ on('btnCambiaTarga', showTargaModal);
 on('btnChiudiTurno', chiudiTurno);
 
 // Timbratura QR/NFC (verso automatico: 1ª del giorno = IN, poi OUT)
+// Il gate blocca l'app finché non c'è l'IN del giorno (dove attivo).
 on('btnTimbraGo', eseguiTimbratura);
 on('btnTimbraAnnulla', chiudiTimbraModal);
+on('btnGateRicontrolla', ricontrollaTimbratura);
+on('btnGateEsci', doLogout);
 on('targaInput', function () { this.value = this.value.toUpperCase() }, 'input');
 
 // Classifica: popup intro
@@ -72,12 +75,13 @@ document.querySelectorAll('[data-goto]').forEach(function (b) {
   b.addEventListener('click', function () { showTab(b.dataset.goto) });
 });
 
-// Delegation per i bottoni elimina nelle card generate dinamicamente
+// Delegation per i bottoni nelle card generate dinamicamente
 document.addEventListener('click', function (e) {
   const r = e.target.closest('[data-del-report]');
   if (r) { eliminaReport(r.dataset.delReport); return }
   const t = e.target.closest('[data-del-ritorno]');
-  if (t) eliminaRitorno(t.dataset.delRitorno);
+  if (t) { eliminaRitorno(t.dataset.delRitorno); return }
+  if (e.target.closest('[data-action="timbra-out"]')) timbraturaOutDaApp();
 });
 
 // Banner offline: eventi + stato iniziale (l'app può avviarsi già offline
