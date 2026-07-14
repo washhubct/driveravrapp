@@ -3,6 +3,7 @@ import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../fir
 import { S } from '../state.js';
 import { oggiRoma, showToast, setBtn, errMsg, minutiTra, meseYM, dataRecord, initDateInput, validaDataInserimento } from '../utils.js';
 import { loadReports, getFiliale } from '../data.js';
+import { enqueue, isNetworkError, flushOutbox, updateOutboxBanner } from '../offline.js';
 import { rOggi } from './oggi.js';
 import { rComp } from './compensi.js';
 
@@ -75,7 +76,9 @@ export async function salvaReport() {
   const fd = getFiliale(fil);
   const filialeNome = fd && fd.nome ? fd.nome : '';
 
-  const rec = {
+  // Campi serializzabili: la coda offline li salva così come sono e
+  // ricostruisce data (Timestamp) e createdAt (serverTimestamp) all'invio.
+  const base = {
     filiale: fil,
     filialeNome: filialeNome,
     fascia: fas,
@@ -84,28 +87,39 @@ export async function salvaReport() {
     driver: (S.dp.cognome || '').toUpperCase(),
     driverEmail: (auth.currentUser.email || '').toLowerCase(),
     targa: S.targaOggi,
-    data: Timestamp.fromDate(selDate),
     mese: meseYM(selDate),
     area: fd ? fd.area : (S.dp.citta || '??'),
     oraInizio: oraInizio,
     oraFine: oraFine,
     durataMin: durataMin,
     tempoMedioMin: Math.round(durataMin / num * 10) / 10,
-    fonte: 'driver_app',
-    createdAt: serverTimestamp()
+    fonte: 'driver_app'
   };
 
+  const dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
+  const dettaglio = num + ' consegne · ' + (filialeNome || 'Filiale ' + fil) + ' · ' + fas + ' · ' + dataLabel;
+
   try {
+    const rec = Object.assign({}, base, { data: Timestamp.fromDate(selDate), createdAt: serverTimestamp() });
     await addDoc(collection(db, 'reportDriver'), rec);
-    const dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
-    document.getElementById('successDetail').textContent = num + ' consegne · ' + (filialeNome || 'Filiale ' + fil) + ' · ' + fas + ' · ' + dataLabel;
+    document.getElementById('successDetail').textContent = dettaglio;
     document.getElementById('formNuova').style.display = 'none';
     document.getElementById('successMsg').style.display = 'block';
     await loadReports();
     rOggi(); rComp();
+    flushOutbox();
   } catch (e) {
-    console.error('salvaReport error:', e);
-    showToast('Errore: ' + errMsg(e));
+    if (isNetworkError(e)) {
+      // Niente rete: accoda e mostra comunque l'esito, con la verità.
+      await enqueue({ collezione: 'reportDriver', payload: base, dataISO: dataStr, campoData: 'data', campoCreato: 'createdAt' });
+      document.getElementById('successDetail').textContent = dettaglio + ' — 📵 sei offline: verrà inviato in automatico appena torna la connessione';
+      document.getElementById('formNuova').style.display = 'none';
+      document.getElementById('successMsg').style.display = 'block';
+      updateOutboxBanner();
+    } else {
+      console.error('salvaReport error:', e);
+      showToast('Errore: ' + errMsg(e));
+    }
   } finally {
     busy = false;
     setBtn('btnSalvaReport', false, '✓ Conferma consegne');

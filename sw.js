@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION ad ogni deploy: l'install riscarica l'intero shell
 // (moduli inclusi) bypassando la HTTP cache, così il set in cache è sempre
 // atomico e coerente con l'ultimo deploy.
-const CACHE_VERSION = 'lastmile-v3';
+const CACHE_VERSION = 'lastmile-v4';
 const SHELL = [
   './',
   './index.html',
@@ -20,6 +20,9 @@ const SHELL = [
   './js/auth.js',
   './js/turno.js',
   './js/nav.js',
+  './js/offline.js',
+  './js/push.js',
+  './js/timbratura.js',
   './js/views/oggi.js',
   './js/views/nuova.js',
   './js/views/ritorno.js',
@@ -44,6 +47,27 @@ self.addEventListener('activate', (e) => {
     const keys = await caches.keys();
     await Promise.all(keys.filter((k) => k !== CACHE_VERSION).map((k) => caches.delete(k)));
     await self.clients.claim();
+  })());
+});
+
+self.addEventListener('push', (e) => {
+  let payload = { title: 'Last Mile Driver', body: '' };
+  try { payload = Object.assign(payload, e.data.json()) } catch (err) { payload.body = e.data ? e.data.text() : '' }
+  e.waitUntil(self.registration.showNotification(payload.title, {
+    body: payload.body,
+    icon: './assets/icons/icon-192.png',
+    badge: './assets/icons/icon-192.png',
+    data: { url: payload.url || './' }
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const url = (e.notification.data && e.notification.data.url) || './';
+    const wins = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (wins.length) return wins[0].focus();
+    return self.clients.openWindow(url);
   })());
 });
 

@@ -3,6 +3,7 @@ import { auth, db, collection, addDoc, Timestamp, serverTimestamp } from '../fir
 import { S } from '../state.js';
 import { showToast, setBtn, errMsg, meseYM, dataRecord, initDateInput, validaDataInserimento } from '../utils.js';
 import { loadRitorni, populateFilialiSelect, getFiliale } from '../data.js';
+import { enqueue, isNetworkError, flushOutbox, updateOutboxBanner } from '../offline.js';
 import { rOggi } from './oggi.js';
 
 let busy = false;
@@ -59,7 +60,7 @@ export async function salvaRitorno() {
     const fd = getFiliale(filiale);
     const filialeNome = fd && fd.nome ? fd.nome : '';
 
-    const rec = {
+    const base = {
       filiale: filiale,
       filialeNome: filialeNome,
       motivo: motivo,
@@ -77,20 +78,34 @@ export async function salvaRitorno() {
       costoFattura: 6.90,
       costoDriver: S.cc,
       stato: 'da_fatturare',
-      data: Timestamp.fromDate(selDate),
       mese: meseYM(selDate),
-      fonte: 'driver_app',
-      timestamp: serverTimestamp()
+      fonte: 'driver_app'
     };
 
-    await addDoc(collection(db, 'ritorni'), rec);
     const dataLabel = selDate.toLocaleDateString('it-IT', { day: 'numeric', month: 'long' });
-    document.getElementById('rtSuccessDetail').textContent = 'Ritorno per ' + cliente + ' · ' + (filialeNome || 'Filiale ' + filiale) + ' · ' + dataLabel;
-    document.getElementById('formRitorno').style.display = 'none';
-    document.getElementById('rtSuccess').style.display = 'block';
-    await loadRitorni();
-    rOggi();
-    showToast('Ritorno registrato');
+    const dettaglio = 'Ritorno per ' + cliente + ' · ' + (filialeNome || 'Filiale ' + filiale) + ' · ' + dataLabel;
+
+    try {
+      const rec = Object.assign({}, base, { data: Timestamp.fromDate(selDate), timestamp: serverTimestamp() });
+      await addDoc(collection(db, 'ritorni'), rec);
+      document.getElementById('rtSuccessDetail').textContent = dettaglio;
+      document.getElementById('formRitorno').style.display = 'none';
+      document.getElementById('rtSuccess').style.display = 'block';
+      await loadRitorni();
+      rOggi();
+      showToast('Ritorno registrato');
+      flushOutbox();
+    } catch (e) {
+      if (isNetworkError(e)) {
+        await enqueue({ collezione: 'ritorni', payload: base, dataISO: dataStr, campoData: 'data', campoCreato: 'timestamp' });
+        document.getElementById('rtSuccessDetail').textContent = dettaglio + ' — 📵 sei offline: verrà inviato in automatico appena torna la connessione';
+        document.getElementById('formRitorno').style.display = 'none';
+        document.getElementById('rtSuccess').style.display = 'block';
+        updateOutboxBanner();
+      } else {
+        throw e;
+      }
+    }
   } catch (e) {
     console.error('salvaRitorno error:', e);
     showToast('Errore: ' + errMsg(e));

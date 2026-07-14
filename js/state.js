@@ -14,7 +14,12 @@ export const S = {
   fotoBase64: null,      // foto segnalazione in corso
   myLbHash: null,        // hash email per match classifica
   lbCache: null,         // {mese, ts, data} — cache TTL del doc leaderboard
-  autoLogoutTimer: null
+  autoLogoutTimer: null,
+  turnoDocId: null,      // doc turniDriver del turno aperto (per la chiusura)
+  turnoOraInizio: null,  // HH:MM di inizio turno (per durataTurnoMin)
+  danniList: [],
+  danniLoaded: false,
+  timbratureOggi: []
 };
 
 // Azzera lo stato legato al driver loggato. Chiamata al signed-out di
@@ -32,4 +37,9 @@ export function resetSessionState() {
   S.fotoBase64 = null;
   S.myLbHash = null;
   S.lbCache = null;
+  S.turnoDocId = null;
+  S.turnoOraInizio = null;
+  S.danniList = [];
+  S.danniLoaded = false;
+  S.timbratureOggi = [];
 }

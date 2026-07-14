@@ -1,7 +1,9 @@
 // Entry point: binding degli eventi UI e avvio dell'app.
 import { oggiRoma } from './utils.js';
 import { initAuthListener, doLogin, showReset, hideReset, doReset, doLogout } from './auth.js';
-import { showTargaModal, confermaTarga, chiudiTargaModal } from './turno.js';
+import { showTargaModal, confermaTarga, chiudiTargaModal, chiudiTurno } from './turno.js';
+import { flushOutbox } from './offline.js';
+import { eseguiTimbratura, chiudiTimbraModal } from './timbratura.js';
 import { showTab } from './nav.js';
 import { eliminaReport, eliminaRitorno } from './views/oggi.js';
 import { setOggi, prefillOraInizio, salvaReport, resetNuova } from './views/nuova.js';
@@ -30,6 +32,12 @@ on('loginPw', function (e) { if (e.key === 'Enter') doLogin() }, 'keydown');
 on('btnTarga', confermaTarga);
 on('btnAnnullaTarga', chiudiTargaModal);
 on('btnCambiaTarga', showTargaModal);
+on('btnChiudiTurno', chiudiTurno);
+
+// Timbratura QR/NFC
+on('btnTimbraIn', function () { eseguiTimbratura('in') });
+on('btnTimbraOut', function () { eseguiTimbratura('out') });
+on('btnTimbraAnnulla', chiudiTimbraModal);
 on('targaInput', function () { this.value = this.value.toUpperCase() }, 'input');
 
 // Classifica: popup intro
@@ -80,7 +88,12 @@ function setOffline(off) {
   if (b) b.style.display = off ? 'block' : 'none';
 }
 window.addEventListener('offline', function () { setOffline(true) });
-window.addEventListener('online', function () { setOffline(false) });
+window.addEventListener('online', function () {
+  setOffline(false);
+  flushOutbox().then(function (n) {
+    if (n > 0) location.reload(); // dopo il sync ricarica: liste e KPI aggiornati
+  });
+});
 setOffline(!navigator.onLine);
 
 initAuthListener();

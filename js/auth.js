@@ -3,6 +3,8 @@ import { auth, db, collection, query, where, getDocs, addDoc, serverTimestamp, s
 import { S, resetSessionState } from './state.js';
 import { cn, showToast } from './utils.js';
 import { loadFl, loadReports, loadRitorni } from './data.js';
+import { flushOutbox, updateOutboxBanner } from './offline.js';
+import { initTimbratura } from './timbratura.js';
 import { rOggi } from './views/oggi.js';
 import { rComp } from './views/compensi.js';
 import { rProf, caricaDatiProfilo } from './views/profilo.js';
@@ -122,6 +124,13 @@ async function initApp(email) {
   caricaDatiProfilo();
   rOggi(); rComp(); rProf();
   document.getElementById('targaView').style.display = 'flex';
+  // Inserimenti rimasti in coda da una sessione offline precedente
+  updateOutboxBanner();
+  flushOutbox().then(function (n) {
+    if (n > 0) { loadReports().then(rOggi); loadRitorni() }
+  });
+  // Se l'app è stata aperta da QR/tag NFC (?timbra=…) mostra la scelta IN/OUT
+  initTimbratura();
 }
 
 export function initAuthListener() {

@@ -42,6 +42,15 @@
 <button id="btnLbIntroOk" class="btn btn-blue" style="font-size:15px">Ho capito, si va! 🚀</button>
 </div>
 </div>
+<div id="timbraView" class="targa-overlay" style="display:none">
+<div class="targa-card">
+<div class="targa-hello">🕐</div>
+<div class="targa-name">Timbratura</div>
+<div class="targa-sub">Punto di <strong id="timbraProv">—</strong><br>Stai entrando o uscendo?</div>
+<button id="btnTimbraIn" class="targa-btn" style="background:var(--success);margin-bottom:10px">🟢 Timbra INGRESSO</button>
+<button id="btnTimbraOut" class="targa-btn" style="background:var(--danger)">🔴 Timbra USCITA</button>
+<button id="btnTimbraAnnulla" class="btn btn-outline" style="margin-top:10px;width:100%">Annulla</button>
+</div></div>
 <div id="targaView" class="targa-overlay" style="display:none">
 <div class="targa-card">
 <div class="targa-hello">👋</div>
@@ -59,6 +68,8 @@
 </div></header>
 <div class="app-body">
 <div id="tabOggi" class="screen active">
+<div id="outboxBanner" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600"></div>
+<div id="timbraCard" style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;box-shadow:var(--shadow)"></div>
 <div id="motivationalBanner" class="motiv-banner"></div>
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseMedia">consegne</div></div></div>
 <div class="kpi-row" style="margin-top:-8px"><div class="kpi" style="border-color:rgba(217,119,6,0.3)"><div class="kpi-label" style="color:var(--warning)">🔄 Ritorni mese</div><div class="kpi-val" id="kRitorni" style="color:var(--warning)">0</div></div></div>
@@ -177,7 +188,7 @@
 <div class="prof-name" id="profNome">—</div>
 <div class="prof-email" id="profEmail">—</div>
 <div class="prof-badges"><span class="prof-badge" id="profCitta">—</span><span class="prof-badge" id="profContratto">—</span></div>
-<div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span id="btnCambiaTarga" class="targa-change">cambia</span></div>
+<div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span id="btnCambiaTarga" class="targa-change">cambia</span><span id="btnChiudiTurno" class="targa-change" style="margin-left:auto">🔚 chiudi turno</span></div>
 </div>
 <div class="section-title">I miei dati personali</div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
@@ -191,6 +202,8 @@
 </div>
 <div class="section-title">Le mie statistiche</div>
 <div class="kpi-row"><div class="kpi"><div class="kpi-label">Totale consegne</div><div class="kpi-val" id="profTotC">0</div></div><div class="kpi"><div class="kpi-label">Giorni attivi</div><div class="kpi-val" id="profTotG">0</div></div></div>
+<div class="section-title" style="margin-top:20px">💶 Multe & Trattenute</div>
+<div id="listaDanni"></div>
 <div class="section-title" style="margin-top:20px">🏆 Classifica del mese</div>
 <div id="leaderboard" class="leaderboard"></div>
 </div>
@@ -256,5 +269,5 @@
 <button id="btnAlertRimanda" class="btn btn-outline">Più tardi</button>
 </div>
 </div>
-<script type="module" src="js/main.js?v=20260714"></script>
+<script type="module" src="js/main.js?v=20260714b"></script>
 </body></html>
