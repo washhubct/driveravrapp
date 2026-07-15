@@ -16,8 +16,7 @@ export const S = {
   lbCache: null,         // {mese, ts, data} — cache TTL del doc leaderboard
   autoLogoutTimer: null,
   turnoDocId: null,      // doc turniDriver del turno aperto (per la chiusura)
-  turnoOraInizio: null,  // HH:MM di inizio turno (per durataTurnoMin)
-  timbratureOggi: []
+  turnoOraInizio: null   // HH:MM di inizio turno (per durataTurnoMin)
 };
 
 // Azzera lo stato legato al driver loggato. Chiamata al signed-out di
@@ -37,5 +36,4 @@ export function resetSessionState() {
   S.lbCache = null;
   S.turnoDocId = null;
   S.turnoOraInizio = null;
-  S.timbratureOggi = [];
 }

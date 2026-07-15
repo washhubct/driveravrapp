@@ -1,18 +1,53 @@
 // Timbratura IN/OUT — QR o tag NFC + geofence.
 //
-// Design (già previsto dalle rules e dalla dashboard): in ogni punto
-// provinciale c'è un QR stampato e/o un tag NFC programmati con l'URL
-//   https://appdriver.avrlogisticarl.com/?timbra=CT&t=TOKEN     (QR)
-//   https://appdriver.avrlogisticarl.com/?timbra=CT&nfc=UID     (NFC)
-// La fotocamera nativa (iOS/Android) o il lettore NFC di sistema aprono
-// l'app con i parametri; qui verifichiamo token/UID contro il doc
-// puntiTimbratura/{provincia} (hash SHA-256, mai token in chiaro nel DB),
-// il geofence, e scriviamo il doc `timbrature` (schema unificato ZKTeco/app).
-import { auth, db, collection, query, where, getDocs, getDoc, addDoc, doc, serverTimestamp } from './firebase.js';
+// Design (rules + dashboard già predisposte):
+// - tag/QR nei punti provinciali programmati con URL
+//     https://appdriver.avrlogisticarl.com/?timbra=CT&t=TOKEN   (QR)
+//     https://appdriver.avrlogisticarl.com/?timbra=CT&nfc=UID   (NFC)
+// - il primo tap del giorno registra l'INGRESSO (e sblocca l'app),
+//   dal secondo in poi l'USCITA (l'ultima OUT aggiorna l'orario)
+// - anti-frode su ENTRAMBI i versi: si timbra solo fisicamente sul punto
+//
+// PRIVACY (decisione 15/07/2026): il dato timbratura è visibile SOLO al
+// team ufficio in dashboard. I driver non hanno lettura sulla collection
+// (rules); l'app tiene un flag locale sul device (localStorage) solo per
+// sapere se il gate è passato e quale verso tocca. Nessun orario in UI.
+import { auth, db, collection, getDoc, addDoc, doc, serverTimestamp } from './firebase.js';
 import { S } from './state.js';
 import { oggiRoma, meseCorrenteRoma, showToast, cn } from './utils.js';
 
 let pendingParams = null; // {provincia, token, nfcUid} dall'URL di apertura
+
+// ── Stato locale del device (nessuna lettura da Firestore) ──
+function statoKey() {
+  return 'lmTimb_' + ((auth.currentUser && auth.currentUser.email) || '').toLowerCase();
+}
+
+function statoOggi() {
+  try {
+    const s = JSON.parse(localStorage.getItem(statoKey()) || '{}');
+    return s.giorno === oggiRoma() ? s : {};
+  } catch (e) { return {} }
+}
+
+function salvaStatoLocale(tipo) {
+  try {
+    const s = statoOggi();
+    s.giorno = oggiRoma();
+    s[tipo] = true;
+    localStorage.setItem(statoKey(), JSON.stringify(s));
+  } catch (e) { /* private mode: il gate ricadrà sul ritimbro, gestito dalla riconciliazione */ }
+}
+
+function haInOggi() {
+  return !!statoOggi().in;
+}
+
+// Verso automatico: la prima timbratura del giorno è l'ingresso, dalla
+// seconda in poi è l'uscita.
+function tipoAutomatico() {
+  return haInOggi() ? 'out' : 'in';
+}
 
 async function sha256hex(text) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
@@ -35,58 +70,6 @@ function getPosizione() {
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 }
     );
   });
-}
-
-// Timbrature di oggi del driver (per stato card e alternanza in/out).
-export async function loadTimbratureOggi() {
-  const em = (auth.currentUser && auth.currentUser.email || '').toLowerCase();
-  if (!em) return;
-  try {
-    const s = await getDocs(query(collection(db, 'timbrature'), where('driverId', '==', em), where('giorno', '==', oggiRoma())));
-    S.timbratureOggi = s.docs.map(function (d) { return d.data() });
-    S.timbratureOggi.sort(function (a, b) {
-      const ta = a.timestamp && a.timestamp.toMillis ? a.timestamp.toMillis() : 0;
-      const tb = b.timestamp && b.timestamp.toMillis ? b.timestamp.toMillis() : 0;
-      return ta - tb;
-    });
-  } catch (e) {
-    console.warn('loadTimbratureOggi:', e.message);
-    S.timbratureOggi = [];
-  }
-  renderTimbraturaCard();
-}
-
-export function renderTimbraturaCard() {
-  const el = document.getElementById('timbraCard');
-  if (!el) return;
-  const fmt = function (t) {
-    return t.timestamp && t.timestamp.toDate
-      ? t.timestamp.toDate().toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
-      : '—';
-  };
-  const ins = S.timbratureOggi.filter(function (t) { return t.tipo === 'in' });
-  const outs = S.timbratureOggi.filter(function (t) { return t.tipo === 'out' });
-  const inStr = ins.length ? '🟢 IN ' + fmt(ins[0]) : '⚪ IN —';
-  const outStr = outs.length ? '🔴 OUT ' + fmt(outs[outs.length - 1]) : '⚪ OUT —';
-  // Anti-frode su ENTRAMBI i versi: ingresso E uscita si timbrano solo
-  // fisicamente sul tag NFC / QR in filiale (nessuna scorciatoia in app).
-  const hint = ins.length && !outs.length
-    ? 'A fine giornata avvicina di nuovo il telefono al tag NFC (o inquadra il QR) per timbrare l\'uscita'
-    : 'Inquadra il QR in filiale con la fotocamera o avvicina il telefono al tag NFC';
-  el.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center">' +
-    '<div style="font-size:13px;font-weight:700;color:var(--navy)">🕐 Timbratura</div>' +
-    '<div style="font-size:13px;font-weight:600">' + inStr + ' · ' + outStr + '</div></div>' +
-    '<div style="font-size:11px;color:var(--text3);margin-top:4px">' + hint + '</div>';
-}
-
-// Verso automatico: la prima timbratura del giorno è l'ingresso, dalla
-// seconda in poi è l'uscita (l'ultima OUT vince nella riconciliazione).
-function tipoAutomatico() {
-  return haInOggi() ? 'out' : 'in';
-}
-
-function haInOggi() {
-  return S.timbratureOggi.some(function (t) { return t.tipo === 'in' });
 }
 
 // Il blocco "prima timbra, poi usi l'app" è attivo solo se il punto
@@ -129,7 +112,6 @@ export async function avviaFlussoIngresso() {
     pendingParams = { provincia: provincia, token: p.get('t') || null, nfcUid: p.get('nfc') || null };
     history.replaceState(null, '', location.pathname); // evita ri-trigger su reload
   }
-  await loadTimbratureOggi();
 
   if (pendingParams) {
     const tipo = tipoAutomatico();
@@ -153,18 +135,14 @@ export async function avviaFlussoIngresso() {
   mostraProsieguo();
 }
 
-// Bottone "Ho timbrato → ricontrolla" nella schermata di blocco.
-export async function ricontrollaTimbratura() {
-  const btn = document.getElementById('btnGateRicontrolla');
-  if (btn) { btn.disabled = true; btn.textContent = 'Controllo...' }
-  await loadTimbratureOggi();
-  if (btn) { btn.disabled = false; btn.textContent = 'Ho timbrato → ricontrolla' }
+// Bottone "Ho timbrato → ricontrolla" nella schermata di blocco
+// (utile se il flag locale è stato appena scritto in un'altra scheda).
+export function ricontrollaTimbratura() {
   if (haInOggi()) mostraProsieguo();
   else showToast('Nessun ingresso registrato oggi — avvicina il telefono al tag o inquadra il QR');
 }
 
-// Annulla dalla modal di conferma: si torna al punto giusto del flusso
-// (gate se manca l'IN e il blocco è attivo, altrimenti targa/app).
+// Annulla dalla modal di conferma: si torna al punto giusto del flusso.
 export async function chiudiTimbraModal() {
   document.getElementById('timbraView').style.display = 'none';
   pendingParams = null;
@@ -209,13 +187,46 @@ export async function eseguiTimbratura() {
 
     // 3. Uscita ripetuta: aggiorna l'orario di fine (l'ultima OUT vince),
     //    ma chiedi conferma per evitare tap accidentali.
-    const outGiaFatta = tipo === 'out' && S.timbratureOggi.some(function (t) { return t.tipo === 'out' });
-    if (outGiaFatta && !confirm('Avevi già timbrato l\'uscita: aggiorno l\'orario a adesso?')) return;
+    if (tipo === 'out' && statoOggi().out && !confirm('Avevi già timbrato l\'uscita: aggiorno l\'orario a adesso?')) return;
 
-    await scriviTimbratura(tipo, metodo, pendingParams.provincia, punto, pendingParams.token);
+    // 4. Geofence: fuori raggio o GPS negato non bloccano la timbratura,
+    //    ma la marcano `sospetto` per la riconciliazione in dashboard.
+    const pos = await getPosizione();
+    let sospetto = false, note = null;
+    const geo = punto.geo || {};
+    if (pos && typeof geo.lat === 'number') {
+      const dist = distanzaMt(pos.lat, pos.lng, geo.lat, geo.lng);
+      const raggio = (geo.raggioMt || 100) + (pos.accuracy || 0);
+      if (dist > raggio) { sospetto = true; note = 'Fuori raggio: ' + dist + 'm dal punto' }
+    } else {
+      sospetto = true;
+      note = 'GPS non disponibile';
+    }
 
+    await addDoc(collection(db, 'timbrature'), {
+      driverId: (auth.currentUser.email || '').toLowerCase(),
+      driverNome: (S.dp.cognome || '') + ' ' + (S.dp.nome || ''),
+      filialeId: pendingParams.provincia,
+      citta: cn(pendingParams.provincia),
+      tipo: tipo,
+      timestamp: serverTimestamp(),
+      giorno: oggiRoma(),
+      mese: meseCorrenteRoma(),
+      fonte: 'app',
+      metodo: metodo,
+      qrTokenLetto: pendingParams.token || null,
+      lat: pos ? pos.lat : null,
+      lng: pos ? pos.lng : null,
+      accuracy: pos ? pos.accuracy : null,
+      sospetto: sospetto,
+      note: note
+    });
+
+    salvaStatoLocale(tipo);
     document.getElementById('timbraView').style.display = 'none';
     pendingParams = null;
+    showToast(tipo === 'in' ? '🟢 Ingresso registrato — buon lavoro!' : '🔴 Uscita registrata — buon rientro!');
+    if (sospetto) showToast('⚠️ Posizione non verificata: la timbratura sarà controllata');
     mostraProsieguo(); // dopo l'IN si prosegue con targa/app
   } catch (e) {
     console.error('timbratura error:', e);
@@ -225,44 +236,3 @@ export async function eseguiTimbratura() {
     if (btn) { btn.disabled = false; btn.textContent = labelIdle }
   }
 }
-
-// Geofence + scrittura del doc timbrature (schema unificato ZKTeco/app).
-// Fuori raggio o GPS negato non bloccano: marcano `sospetto` per la
-// riconciliazione anti-frode in dashboard.
-async function scriviTimbratura(tipo, metodo, provincia, punto, tokenLetto) {
-  const pos = await getPosizione();
-  let sospetto = false, note = null;
-  const geo = (punto && punto.geo) || {};
-  if (pos && typeof geo.lat === 'number') {
-    const dist = distanzaMt(pos.lat, pos.lng, geo.lat, geo.lng);
-    const raggio = (geo.raggioMt || 100) + (pos.accuracy || 0);
-    if (dist > raggio) { sospetto = true; note = 'Fuori raggio: ' + dist + 'm dal punto' }
-  } else {
-    sospetto = true;
-    note = pos ? 'Punto senza coordinate' : 'GPS non disponibile';
-  }
-
-  await addDoc(collection(db, 'timbrature'), {
-    driverId: (auth.currentUser.email || '').toLowerCase(),
-    driverNome: (S.dp.cognome || '') + ' ' + (S.dp.nome || ''),
-    filialeId: provincia,
-    citta: cn(provincia),
-    tipo: tipo,
-    timestamp: serverTimestamp(),
-    giorno: oggiRoma(),
-    mese: meseCorrenteRoma(),
-    fonte: 'app',
-    metodo: metodo,
-    qrTokenLetto: tokenLetto || null,
-    lat: pos ? pos.lat : null,
-    lng: pos ? pos.lng : null,
-    accuracy: pos ? pos.accuracy : null,
-    sospetto: sospetto,
-    note: note
-  });
-
-  showToast(tipo === 'in' ? '🟢 Ingresso timbrato!' : '🔴 Uscita timbrata — buon rientro!');
-  if (sospetto) showToast('⚠️ Posizione non verificata: la timbratura sarà controllata');
-  await loadTimbratureOggi();
-}
-
