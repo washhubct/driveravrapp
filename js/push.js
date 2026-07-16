@@ -1,8 +1,8 @@
-// Push notification (Web Push via FCM).
-// ATTIVAZIONE: incollare in VAPID_PUBLIC_KEY la "Web Push certificate key pair"
-// da Firebase Console → Impostazioni progetto → Cloud Messaging. Finché è
-// vuota, il modulo è un no-op silenzioso. L'invio server-side è una Cloud
-// Function in avr-delivery-hub (vedi proposta docs/push-notifications.md).
+// Push notification (Web Push con coppia VAPID propria).
+// ATTIVAZIONE: incollare in VAPID_PUBLIC_KEY la chiave pubblica generata con
+// `npx web-push generate-vapid-keys` (la privata va nei secret delle Cloud
+// Functions di avr-delivery-hub). Finché è vuota, il modulo è un no-op
+// silenzioso. Invio server-side: avr-delivery-hub, docs/push-notifications-driver-app.md.
 import { auth, db, collection, addDoc, serverTimestamp } from './firebase.js';
 import { S } from './state.js';
 
