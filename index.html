@@ -8,7 +8,7 @@
 <meta http-equiv="Expires" content="0">
 <title>Last Mile Driver</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="icon" href="apple-touch-icon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="apple-touch-icon.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#0f1d3d">
 <style>
 :root{--navy:#0f1d3d;--navy-l:#1a2e5a;--navy-d:#0a1428;--blue:#2563eb;--bg:#f4f6f9;--white:#fff;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;--border:#e2e8f0;--success:#16a34a;--success-bg:#f0fdf4;--danger:#dc2626;--warning:#d97706;--blue-bg:#eff6ff;--radius:14px;--shadow:0 1px 3px rgba(15,29,61,0.08);--font:'Plus Jakarta Sans',-apple-system,sans-serif}
@@ -425,6 +425,7 @@ if(!cambio)maybeShowLbIntro();
 try{await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggiRoma(),oraInizio:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast(cambio?'Mezzo aggiornato: '+targaOggi:'Turno iniziato con '+targaOggi);
 if(!cambio)checkProfiloAlert();
+if(!cambio)initPush();
 scheduleAutoLogout()}
 
 // Imposta data di oggi nel campo data
@@ -786,6 +787,33 @@ function showMotivational(){
     }
 
     el.innerHTML='<div class="motiv-emoji">'+emoji+'</div><div class="motiv-text">'+escapeHtml(text)+'</div><div class="motiv-sub">'+escapeHtml(sub)+'</div>';
+}
+
+// === PUSH NOTIFICATIONS (Web Push, coppia VAPID del progetto) ===
+// Il permesso viene chiesto dopo la conferma della targa (telefono in mano).
+// La subscription finisce in pushSubscriptions/{auto}; l'invio è server-side
+// (Cloud Functions: promemoria 21:00, esiti ritorni/segnalazioni, podio, patente, manuale).
+var VAPID_PUBLIC_KEY='BEmajBtrystbgxXtkjHR2jtrpD2_M6JsJV7ua9ap0oN8fAH1P0c2S4BSKd-RLPKLFNqHJ4pibnW5Noi1OEXfi9w';
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(function(e){console.warn('SW:',e.message)})}
+function b64ToU8(b){var pad='='.repeat((4-b.length%4)%4);var raw=atob((b+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,function(c){return c.charCodeAt(0)})}
+async function initPush(){
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window))return;
+    if(Notification.permission==='denied')return;
+    if(!auth.currentUser||!dp)return;
+    try{
+        var reg=await navigator.serviceWorker.ready;
+        var sub=await reg.pushManager.getSubscription();
+        if(!sub){
+            if(Notification.permission!=='granted'){var perm=await Notification.requestPermission();if(perm!=='granted')return}
+            sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToU8(VAPID_PUBLIC_KEY)});
+        }
+        var key=sub.endpoint.slice(-32);
+        var saved=null;try{saved=localStorage.getItem('lmPushEndpoint')}catch(e){}
+        if(saved===key)return;
+        await db.collection('pushSubscriptions').add({email:(auth.currentUser.email||'').toLowerCase(),driver:(dp.cognome||'').toUpperCase(),subscription:JSON.parse(JSON.stringify(sub)),userAgent:(navigator.userAgent||'').slice(0,120),timestamp:firebase.firestore.FieldValue.serverTimestamp()});
+        try{localStorage.setItem('lmPushEndpoint',key)}catch(e){}
+        showToast('Notifiche attivate 🔔');
+    }catch(e){console.warn('push init:',e.message)}
 }
 
 // === PATENTE: verifica AI con foto, alert in scadenza, blocco ===
