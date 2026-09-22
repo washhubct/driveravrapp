@@ -36,6 +36,7 @@
 .targa-hello{font-size:24px;margin-bottom:4px}
 .targa-name{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px}
 .targa-sub{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
+.pat-slot{flex:1;border:2px dashed var(--border);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;overflow:hidden}.pat-slot img{max-width:100%;max-height:90px;border-radius:8px;object-fit:cover}.pat-slot.ok{border-style:solid;border-color:var(--success)}.pat-slot-ico{font-size:26px}
 .targa-input{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--navy);font-family:var(--font);font-size:22px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:3px;outline:none;margin-bottom:16px}.targa-input:focus{border-color:var(--blue)}
 .targa-btn{width:100%;padding:16px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-family:var(--font);font-size:16px;font-weight:700;cursor:pointer}.targa-btn:active{transform:scale(0.98)}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.kpi{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.kpi.wide{grid-column:span 2}.kpi.accent{background:var(--navy);border-color:var(--navy);color:#fff}.kpi.accent .kpi-label{color:rgba(255,255,255,0.6)}.kpi.accent .kpi-sub{color:rgba(255,255,255,0.5)}.kpi-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}.kpi-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1.1}.kpi.accent .kpi-val{color:#fff}.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
@@ -166,15 +167,18 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-outline" onclick="chiudiTargaModal()" style="margin-top:10px;width:100%;display:none" id="btnAnnullaTarga">Annulla</button>
 </div></div>
 <div id="patenteView" class="targa-overlay" style="display:none">
-<div class="targa-card">
+<div class="targa-card" style="max-height:92vh;overflow:auto">
 <div class="targa-hello">🪪</div>
 <div class="targa-name" id="patenteTitolo">Patente</div>
-<div class="targa-sub" id="patenteSub">—</div>
-<div class="form-group" style="text-align:left"><label class="form-label">Numero patente</label><input type="text" id="patenteNumero" class="input" placeholder="U1234567890" maxlength="12" style="text-transform:uppercase" autocomplete="off"></div>
-<div class="form-group" style="text-align:left"><label class="form-label" id="patenteScadLabel">Scadenza</label><input type="date" id="patenteScad" class="input"></div>
-<button id="btnPatenteSalva" class="targa-btn" onclick="salvaPatenteBlocco()">Salva</button>
-<div style="font-size:12px;color:var(--text3);line-height:1.6;margin-top:14px">Invia anche una foto della patente (fronte e retro) a <a href="mailto:risorse.umane@last-mile.it" style="color:#2563eb;font-weight:600;text-decoration:none">risorse.umane@last-mile.it</a></div>
-<button class="btn btn-outline" style="margin-top:10px;width:100%" onclick="doLogout()">Esci</button>
+<div class="targa-sub" id="patenteSub" style="margin-bottom:14px">—</div>
+<div style="display:flex;gap:10px;margin-bottom:12px">
+<label class="pat-slot" id="patSlotFronte"><input type="file" id="patFronte" accept="image/*" capture="environment" style="display:none" onchange="scegliFotoPatente('fronte',this)"><span class="pat-slot-ico">📷</span><span>Fronte</span></label>
+<label class="pat-slot" id="patSlotRetro"><input type="file" id="patRetro" accept="image/*" capture="environment" style="display:none" onchange="scegliFotoPatente('retro',this)"><span class="pat-slot-ico">📷</span><span>Retro</span></label>
+</div>
+<button id="btnPatenteVerifica" class="targa-btn" onclick="verificaPatenteFoto()" disabled style="opacity:.5">🔍 Verifica patente</button>
+<div id="patenteEsito" style="font-size:13px;line-height:1.5;margin-top:12px;text-align:left"></div>
+<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:12px">Le foto vengono lette in automatico per controllare nome, numero e scadenza. Inquadra il documento intero, a fuoco, senza riflessi. Nessun dato va inserito a mano.</div>
+<button id="btnPatenteChiudi" class="btn btn-outline" style="margin-top:10px;width:100%" onclick="chiudiPatenteView()">Esci</button>
 </div></div>
 <div id="appView" class="app" style="display:none">
 <div id="offlineBanner" style="display:none;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:100">📵 Sei offline — verifica la connessione</div>
@@ -184,7 +188,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div></header>
 <div class="app-body">
 <div id="tabOggi" class="screen active">
-<div id="patenteBanner" onclick="showTab('profilo')" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;cursor:pointer"></div>
+<div id="patenteBanner" onclick="mostraBloccoPatente(false)" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;cursor:pointer"></div>
 <div id="motivationalBanner" class="motiv-banner"></div>
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseMedia">consegne</div></div></div>
 <div class="kpi-row" style="margin-top:-8px"><div class="kpi" style="border-color:rgba(217,119,6,0.3)"><div class="kpi-label" style="color:var(--warning)">🔄 Ritorni mese</div><div class="kpi-val" id="kRitorni" style="color:var(--warning)">0</div></div></div>
@@ -308,8 +312,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="section-title">I miei dati personali</div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
 <div class="form-group"><label class="form-label">Codice Fiscale</label><input type="text" id="profCF" class="input" placeholder="RSSMRA85M01H501Z" maxlength="16" style="text-transform:uppercase"></div>
-<div class="form-group"><label class="form-label">Numero Patente</label><input type="text" id="profPatente" class="input" placeholder="U1234567890" maxlength="12" style="text-transform:uppercase"></div>
-<div class="form-group"><label class="form-label">Scadenza Patente</label><input type="date" id="profPatenteScad" class="input"></div>
+<div class="form-group"><label class="form-label">Patente <span id="profPatenteStato" style="font-weight:600;text-transform:none;letter-spacing:0"></span></label><div style="display:flex;gap:8px"><input type="text" id="profPatente" class="input" placeholder="—" readonly style="flex:1.2"><input type="date" id="profPatenteScad" class="input" readonly style="flex:1"></div><button type="button" class="btn btn-outline" style="width:100%;margin-top:-4px" onclick="mostraBloccoPatente(false)">📷 Verifica / aggiorna patente con foto</button></div>
 <div class="form-group"><label class="form-label">Telefono</label><input type="tel" id="profTelefono" class="input" placeholder="+39 333 1234567" inputmode="tel"></div>
 <div class="form-group"><label class="form-label">Data di Nascita</label><input type="date" id="profDataNascita" class="input"></div>
 <div class="form-group"><label class="form-label">Indirizzo di Residenza</label><input type="text" id="profIndirizzo" class="input" placeholder="Via Roma 1, 95100 Catania"></div>
@@ -377,7 +380,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="profile-alert-card">
 <div class="profile-alert-icon">📋</div>
 <div class="profile-alert-title">Completa il tuo profilo</div>
-<div class="profile-alert-text">Per continuare ad usare l'app, inserisci i tuoi dati personali: codice fiscale, patente e telefono.</div>
+<div class="profile-alert-text">Per continuare ad usare l'app, inserisci i tuoi dati personali: codice fiscale e telefono.</div>
 <button class="btn btn-blue" onclick="chiudiAlertProfilo()">Completa ora →</button>
 <button class="btn btn-outline" onclick="rimandaAlertProfilo()">Più tardi</button>
 </div>
@@ -385,6 +388,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCleejDdWN6w41TcBw4fvyAPr_6rxU8Bgs",authDomain:"avr-logistic-dashboard.firebaseapp.com",projectId:"avr-logistic-dashboard",storageBucket:"avr-logistic-dashboard.firebasestorage.app",messagingSenderId:"323721042739",appId:"1:323721042739:web:a9fa1710eeb8cfe3357c46"});
 var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],cc=3.50,fl=[],targaOggi='',submitting=false,turnoConfermato=false,loggingAccesso=false;
@@ -784,76 +788,112 @@ function showMotivational(){
     el.innerHTML='<div class="motiv-emoji">'+emoji+'</div><div class="motiv-text">'+escapeHtml(text)+'</div><div class="motiv-sub">'+escapeHtml(sub)+'</div>';
 }
 
-// === PATENTE: alert in scadenza + blocco se scaduta o mancante ===
-// Il dato è autodichiarato dal driver (Profilo): la verifica documentale
-// resta a carico dell'ufficio (copia fronte/retro via email a HR).
+// === PATENTE: verifica AI con foto, alert in scadenza, blocco ===
+// numeroPatente/scadenzaPatente li scrive SOLO la Cloud Function verificaPatente
+// dopo aver letto le foto fronte/retro: il driver non dichiara nulla a mano.
 var PATENTE_PREAVVISO_GG=30;
+var PATENTE_VERIFICA_DAL='2026-10-06'; // da questa data serve la verifica con foto per usare l'app
+var VERIFICA_PATENTE_URL='https://europe-west1-avr-logistic-dashboard.cloudfunctions.net/verificaPatente';
 function fmtDataIt(ymd){if(!ymd)return '';var p=ymd.split('-');return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:ymd}
-// → {stato:'ok'|'scadenza'|'scaduta'|'mancante', giorni, scadenza}
+function patenteVerificata(){return !!(dp&&dp.patenteVerifica&&dp.patenteVerifica.stato==='verificata')}
+// → {stato:'ok'|'scadenza'|'scaduta'|'mancante'|'nonverificata'|'daverificare', giorni, scadenza}
 function statoPatente(){
     if(!dp)return{stato:'ok',giorni:null,scadenza:null};
     var scad=dp.scadenzaPatente;
     if(!dp.numeroPatente||!scad||!/^\d{4}-\d{2}-\d{2}$/.test(scad))return{stato:'mancante',giorni:null,scadenza:null};
     var giorni=Math.round((new Date(scad+'T12:00:00')-new Date(oggiRoma()+'T12:00:00'))/86400000);
     if(giorni<0)return{stato:'scaduta',giorni:giorni,scadenza:scad};
+    if(!patenteVerificata())return{stato:oggiRoma()>=PATENTE_VERIFICA_DAL?'nonverificata':'daverificare',giorni:giorni,scadenza:scad};
     if(giorni<=PATENTE_PREAVVISO_GG)return{stato:'scadenza',giorni:giorni,scadenza:scad};
     return{stato:'ok',giorni:giorni,scadenza:scad};
 }
-function patenteBloccata(){var st=statoPatente().stato;return st==='scaduta'||st==='mancante'}
-// Flusso post-login: patente valida → targa; altrimenti schermata blocco
+function patenteBloccata(){var st=statoPatente().stato;return st==='scaduta'||st==='mancante'||st==='nonverificata'}
+// Flusso post-login: patente ok → targa; altrimenti schermata blocco
 function avviaIngresso(){
-    if(patenteBloccata()){mostraBloccoPatente();return}
+    if(patenteBloccata()){mostraBloccoPatente(true);return}
     document.getElementById('targaView').style.display='flex';
 }
-function mostraBloccoPatente(){
-    var st=statoPatente(),scaduta=st.stato==='scaduta';
-    document.getElementById('patenteTitolo').textContent=scaduta?'Patente scaduta':'Inserisci la patente';
-    document.getElementById('patenteSub').innerHTML=scaduta
-        ?'La tua patente risulta <strong style="color:#dc2626">scaduta il '+fmtDataIt(st.scadenza)+'</strong>.<br>Non puoi guidare i mezzi aziendali con patente scaduta: <strong>rinnovala</strong> e inserisci qui la nuova scadenza.'
-        :'Per usare l\'app e guidare i mezzi aziendali devi inserire <strong>numero e scadenza</strong> della tua patente.';
-    document.getElementById('patenteScadLabel').textContent=scaduta?'Nuova scadenza (dopo il rinnovo)':'Scadenza';
-    document.getElementById('patenteNumero').value=dp.numeroPatente||'';
-    document.getElementById('patenteScad').value='';
-    document.getElementById('patenteScad').min=oggiRoma();
-    document.getElementById('btnPatenteSalva').textContent=scaduta?'✅ Ho rinnovato la patente':'✅ Salva patente';
-    document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='none';
+var patFoto={fronte:null,retro:null},patBloccante=false;
+function mostraBloccoPatente(bloccante){
+    if(!dp)return;
+    patBloccante=!!bloccante;
+    var st=statoPatente(),t,sub;
+    if(st.stato==='scaduta'){t='Patente scaduta';sub='La tua patente risulta <strong style="color:#dc2626">scaduta il '+fmtDataIt(st.scadenza)+'</strong>. Non puoi guidare i mezzi aziendali: <strong>rinnovala</strong> e poi fotografa qui la patente nuova.'}
+    else if(st.stato==='mancante'){t='Fotografa la patente';sub='Per usare l\'app devi verificare la patente: scatta una foto del <strong>fronte</strong> e una del <strong>retro</strong>.'}
+    else if(st.stato==='nonverificata'){t='Verifica la patente';sub='Da oggi la patente va verificata con una foto del <strong>fronte</strong> e del <strong>retro</strong>. Ci vuole un minuto.'}
+    else{t='Verifica patente';sub='Fotografa <strong>fronte</strong> e <strong>retro</strong> della patente: i dati vengono letti e verificati in automatico.'}
+    document.getElementById('patenteTitolo').textContent=t;
+    document.getElementById('patenteSub').innerHTML=sub;
+    document.getElementById('btnPatenteChiudi').textContent=patBloccante?'Esci':'Chiudi';
+    resetSlotPatente('fronte');resetSlotPatente('retro');
+    document.getElementById('patenteEsito').innerHTML='';
+    aggiornaBtnPatente();
+    document.getElementById('targaView').style.display='none';
+    if(patBloccante)document.getElementById('appView').style.display='none';
     document.getElementById('patenteView').style.display='flex';
 }
-async function salvaPatenteBlocco(){
-    if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
-    if(!dp||!dp.id){showToast('Errore: profilo non trovato');return}
-    if(submitting)return;
-    var num=document.getElementById('patenteNumero').value.trim().toUpperCase();
-    var scad=document.getElementById('patenteScad').value;
-    var label=document.getElementById('btnPatenteSalva').textContent;
-    if(!/^[A-Z0-9]{8,12}$/.test(num)){showToast('Numero patente non valido (8-12 lettere/cifre, es. U1N905728K)');return}
-    if(!scad){showToast('Inserisci la data di scadenza');return}
-    if(scad<=oggiRoma()){showToast('La scadenza deve essere futura: se la patente è ancora scaduta devi prima rinnovarla');return}
-    var max=new Date();max.setFullYear(max.getFullYear()+10);
-    if(new Date(scad+'T12:00:00')>max){showToast('Scadenza troppo lontana (max 10 anni): controlla la data sulla patente');return}
-    submitting=true;setBtn('btnPatenteSalva',true,'Salvataggio...');
+function chiudiPatenteView(){document.getElementById('patenteView').style.display='none';if(patBloccante)doLogout()}
+function resetSlotPatente(lato){patFoto[lato]=null;var sl=document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro');sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
+function aggiornaBtnPatente(){var b=document.getElementById('btnPatenteVerifica');var ok=!!(patFoto.fronte&&patFoto.retro);b.disabled=!ok;b.style.opacity=ok?'1':'.5'}
+// Ridimensiona a max 1600px lato lungo, JPEG 0.85 (≈300-600 KB): upload veloce, lettura AI ok
+function ridimensionaFoto(file){return new Promise(function(resolve,reject){var url=URL.createObjectURL(file);var img=new Image();img.onload=function(){try{var MAX=1600,w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,MAX/Math.max(w,h));var c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?resolve(b):reject(new Error('conversione fallita'))},'image/jpeg',0.85)}catch(e){reject(e)}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('immagine non leggibile'))};img.src=url})}
+async function scegliFotoPatente(lato,input){
+    var f=input.files&&input.files[0];if(!f)return;
+    if(!/^image\//.test(f.type)){showToast('Seleziona una foto');input.value='';return}
     try{
-        await db.collection('driverAnagrafica').doc(dp.id).update({numeroPatente:num,scadenzaPatente:scad});
-        dp.numeroPatente=num;dp.scadenzaPatente=scad;
-        document.getElementById('profPatente').value=num;document.getElementById('profPatenteScad').value=scad;
-        document.getElementById('patenteView').style.display='none';
-        showToast('Patente aggiornata. Buon lavoro!');
-        aggiornaBannerPatente();
-        avviaIngresso();
-    }catch(e){showToast('Errore salvataggio: '+errMsg(e))}finally{submitting=false;setBtn('btnPatenteSalva',false,label)}
+        var blob=await ridimensionaFoto(f);
+        patFoto[lato]=blob;
+        var sl=document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro');
+        sl.classList.add('ok');sl.querySelectorAll('span').forEach(function(x){x.style.display='none'});
+        var old=sl.querySelector('img');if(old)old.remove();
+        var im=document.createElement('img');im.src=URL.createObjectURL(blob);im.alt=lato;sl.appendChild(im);
+    }catch(e){showToast('Foto non utilizzabile: '+errMsg(e));input.value=''}
+    aggiornaBtnPatente();
 }
-// Banner giallo in tab Oggi quando mancano ≤30 giorni alla scadenza
+async function verificaPatenteFoto(){
+    if(!auth.currentUser||!dp||!dp.id){showToast('Sessione scaduta. Ricarica la pagina.');return}
+    if(!patFoto.fronte||!patFoto.retro){showToast('Servono entrambe le foto: fronte e retro');return}
+    if(submitting)return;submitting=true;
+    var esito=document.getElementById('patenteEsito');
+    setBtn('btnPatenteVerifica',true,'');document.getElementById('btnPatenteVerifica').textContent='⏳ Carico le foto...';
+    try{
+        var uid=auth.currentUser.uid;
+        await firebase.storage().ref('patenti/'+uid+'/fronte.jpg').put(patFoto.fronte,{contentType:'image/jpeg'});
+        await firebase.storage().ref('patenti/'+uid+'/retro.jpg').put(patFoto.retro,{contentType:'image/jpeg'});
+        document.getElementById('btnPatenteVerifica').textContent='🔍 Verifico il documento...';
+        var tok=await auth.currentUser.getIdToken();
+        var r=await fetch(VERIFICA_PATENTE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:'{}'});
+        var j=null;try{j=await r.json()}catch(e){}
+        if(!r.ok){throw new Error((j&&j.error)||('errore '+r.status))}
+        if(j.stato==='verificata'){
+            dp.numeroPatente=j.numero;dp.scadenzaPatente=j.scadenza;dp.patenteVerifica={stato:'verificata',il:new Date().toISOString()};
+            caricaDatiProfilo();
+            esito.innerHTML='<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 12px;color:#065f46"><strong>✅ Patente verificata.</strong> N. '+escapeHtml(j.numero)+', scade il '+fmtDataIt(j.scadenza)+'.</div>';
+            showToast('Patente verificata. Buon lavoro!');
+            aggiornaBannerPatente();
+            setTimeout(function(){document.getElementById('patenteView').style.display='none';if(patBloccante){patBloccante=false;avviaIngresso()}},1600);
+        }else{
+            if(j.scadenza){dp.scadenzaPatente=j.scadenza}
+            dp.patenteVerifica={stato:'respinta',motivo:j.motivo};
+            esito.innerHTML='<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;color:#991b1b"><strong>❌ Non verificata.</strong> '+escapeHtml(j.motivo||'')+'<br><span style="font-size:12px">Rifai le foto oppure scrivi a <a href="mailto:risorse.umane@last-mile.it">risorse.umane@last-mile.it</a>.</span></div>';
+            resetSlotPatente('fronte');resetSlotPatente('retro');
+        }
+    }catch(e){
+        esito.innerHTML='<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;color:#991b1b">⚠️ '+escapeHtml(errMsg(e))+'</div>';
+    }finally{submitting=false;document.getElementById('btnPatenteVerifica').textContent='🔍 Verifica patente';aggiornaBtnPatente()}
+}
+// Banner giallo in tab Oggi: in scadenza (≤30 gg) oppure verifica foto da fare entro la data limite
 function aggiornaBannerPatente(){
     var b=document.getElementById('patenteBanner');if(!b)return;
     var st=statoPatente();
-    if(st.stato!=='scadenza'){b.style.display='none';return}
-    b.innerHTML='⚠️ La tua patente scade '+(st.giorni===0?'<strong>oggi</strong>':'tra <strong>'+st.giorni+' giorni</strong> ('+fmtDataIt(st.scadenza)+')')+'. Rinnovala per tempo e aggiorna la scadenza in <strong>Profilo</strong>.';
-    b.style.display='block';
+    if(st.stato==='scadenza'){b.innerHTML='⚠️ La tua patente scade '+(st.giorni===0?'<strong>oggi</strong>':'tra <strong>'+st.giorni+' giorni</strong> ('+fmtDataIt(st.scadenza)+')')+'. Rinnovala per tempo e poi fotografala da <strong>Profilo</strong>.';b.style.display='block';return}
+    if(st.stato==='daverificare'){b.innerHTML='🪪 <strong>Verifica la patente con una foto</strong> entro il '+fmtDataIt(PATENTE_VERIFICA_DAL)+': tocca qui. Dopo quella data l\'app resta bloccata finché non lo fai.';b.style.display='block';return}
+    b.style.display='none';
 }
 
 function profiloCompleto(){
     if(!dp)return true;
-    return dp.codiceFiscale && dp.numeroPatente && dp.telefono;
+    return dp.codiceFiscale && dp.telefono;
 }
 
 function checkProfiloAlert(){
@@ -876,6 +916,8 @@ function caricaDatiProfilo(){
     document.getElementById('profCF').value=dp.codiceFiscale||'';
     document.getElementById('profPatente').value=dp.numeroPatente||'';
     document.getElementById('profPatenteScad').value=dp.scadenzaPatente||'';
+    var pv=dp.patenteVerifica,pe=document.getElementById('profPatenteStato');
+    if(pe)pe.innerHTML=pv&&pv.stato==='verificata'?'<span style="color:var(--success)">✅ verificata</span>':pv&&pv.stato==='respinta'?'<span style="color:var(--danger)">❌ respinta</span>':'<span style="color:var(--warning)">⚠️ da verificare con foto</span>';
     document.getElementById('profTelefono').value=dp.telefono||'';
     document.getElementById('profDataNascita').value=dp.dataNascita||'';
     document.getElementById('profIndirizzo').value=dp.indirizzo||'';
@@ -887,27 +929,22 @@ async function salvaProfilo(){
     if(submitting)return;
     submitting=true;setBtn('btnSalvaProfilo',true,'Salvataggio...');
     var cf=document.getElementById('profCF').value.trim().toUpperCase();
-    var pat=document.getElementById('profPatente').value.trim().toUpperCase();
-    var patScad=document.getElementById('profPatenteScad').value;
     var tel=document.getElementById('profTelefono').value.trim();
     var nascita=document.getElementById('profDataNascita').value;
     var indirizzo=document.getElementById('profIndirizzo').value.trim();
 
     if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
-    if(!pat){showToast('Inserisci il numero della patente');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
     if(!tel){showToast('Inserisci il numero di telefono');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
 
     try{
         await db.collection('driverAnagrafica').doc(dp.id).update({
             codiceFiscale:cf,
-            numeroPatente:pat,
-            scadenzaPatente:patScad||null,
             telefono:tel,
             dataNascita:nascita||null,
             indirizzo:indirizzo||null,
             profiloCompletatoIl:firebase.firestore.FieldValue.serverTimestamp()
         });
-        dp.codiceFiscale=cf;dp.numeroPatente=pat;dp.scadenzaPatente=patScad;
+        dp.codiceFiscale=cf;
         dp.telefono=tel;dp.dataNascita=nascita;dp.indirizzo=indirizzo;
         aggiornaBannerPatente();
         showToast('Dati salvati con successo!');
