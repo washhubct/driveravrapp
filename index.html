@@ -36,7 +36,15 @@
 .targa-hello{font-size:24px;margin-bottom:4px}
 .targa-name{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px}
 .targa-sub{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
-.pat-slot{flex:1;position:relative;border:2px dashed var(--border);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;overflow:hidden}.pat-slot img{max-width:100%;max-height:90px;border-radius:8px;object-fit:cover}.pat-slot.ok{border-style:solid;border-color:var(--success)}.pat-slot-ico{font-size:26px}.pat-slot img,.pat-slot span{pointer-events:none}.pat-slot input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.pat-slot .pat-stato{position:absolute;left:0;right:0;bottom:0;background:rgba(15,29,61,0.75);color:#fff;font-size:10px;font-weight:600;padding:2px 4px;display:none}.pat-slot.ok .pat-stato{display:block}
+.pat-card{padding:26px 20px 20px}
+.pat-slots{display:flex;gap:10px;margin-bottom:10px}
+.pat-slot{flex:1;position:relative;border:2px dashed #94a3b8;border-radius:14px;padding:12px 6px 10px;text-align:center;cursor:pointer;color:var(--text2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:140px;overflow:hidden}
+.pat-slot .pat-idle{display:flex;flex-direction:column;align-items:center;gap:3px;pointer-events:none}.pat-slot-ico{font-size:30px;line-height:1}.pat-slot-t{font-size:15px;font-weight:800;color:var(--navy)}.pat-slot-h{font-size:11px;color:var(--text3);line-height:1.3}.pat-slot-cta{margin-top:6px;font-size:12px;font-weight:700;color:#fff;background:var(--navy);border-radius:999px;padding:5px 10px}
+.pat-slot img{max-width:100%;max-height:100px;border-radius:8px;object-fit:cover;pointer-events:none}.pat-slot .pat-stato{position:absolute;left:0;right:0;bottom:0;background:rgba(5,150,105,0.94);color:#fff;font-size:12px;font-weight:800;padding:6px 4px;pointer-events:none}.pat-slot.ok{border-style:solid;border-color:var(--success);background:#fff}.pat-slot.ok .pat-idle{display:none}.pat-slot:not(.ok) img,.pat-slot:not(.ok) .pat-stato{display:none}.pat-slot.ok.carico .pat-stato{background:rgba(15,29,61,0.85)}
+.pat-slot input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.pat-tips{display:flex;gap:8px;align-items:flex-start;text-align:left;background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:8px 10px;font-size:12px;color:#78350f;line-height:1.45;margin-bottom:12px}
+.pat-exit{background:none;border:none;color:var(--text3);font-family:var(--font);font-size:13px;font-weight:600;text-decoration:underline;margin-top:14px;cursor:pointer;padding:6px}
+.pat-esito-ok{background:#ecfdf5;border:1px solid #6ee7b7;border-radius:12px;padding:14px 12px;color:#065f46;text-align:center}.pat-esito-ok .big{font-size:36px;line-height:1;margin-bottom:6px}.pat-esito-ko{background:#fef2f2;border:1px solid #fca5a5;border-radius:12px;padding:12px;color:#991b1b;text-align:left}.pat-esito-ko .t{font-weight:800;margin-bottom:4px}
 .targa-input{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--navy);font-family:var(--font);font-size:22px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:3px;outline:none;margin-bottom:16px}.targa-input:focus{border-color:var(--blue)}
 .targa-btn{width:100%;padding:16px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-family:var(--font);font-size:16px;font-weight:700;cursor:pointer}.targa-btn:active{transform:scale(0.98)}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.kpi{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.kpi.wide{grid-column:span 2}.kpi.accent{background:var(--navy);border-color:var(--navy);color:#fff}.kpi.accent .kpi-label{color:rgba(255,255,255,0.6)}.kpi.accent .kpi-sub{color:rgba(255,255,255,0.5)}.kpi-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}.kpi-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1.1}.kpi.accent .kpi-val{color:#fff}.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
@@ -167,18 +175,19 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-outline" onclick="chiudiTargaModal()" style="margin-top:10px;width:100%;display:none" id="btnAnnullaTarga">Annulla</button>
 </div></div>
 <div id="patenteView" class="targa-overlay" style="display:none">
-<div class="targa-card" style="max-height:92vh;overflow:auto">
+<div class="targa-card pat-card" style="max-height:94vh;overflow:auto">
 <div class="targa-hello">🪪</div>
 <div class="targa-name" id="patenteTitolo">Patente</div>
-<div class="targa-sub" id="patenteSub" style="margin-bottom:14px">—</div>
-<div style="display:flex;gap:10px;margin-bottom:12px">
-<label class="pat-slot" id="patSlotFronte"><span class="pat-slot-ico">📷</span><span>Fronte</span><span class="pat-stato"></span><input type="file" id="patFronte" accept="image/*" onchange="scegliFotoPatente('fronte',this)"></label>
-<label class="pat-slot" id="patSlotRetro"><span class="pat-slot-ico">📷</span><span>Retro</span><span class="pat-stato"></span><input type="file" id="patRetro" accept="image/*" onchange="scegliFotoPatente('retro',this)"></label>
+<div class="targa-sub" id="patenteSub" style="margin-bottom:12px">—</div>
+<div class="pat-slots">
+<label class="pat-slot" id="patSlotFronte"><span class="pat-idle"><span class="pat-slot-ico">📷</span><span class="pat-slot-t">Fronte</span><span class="pat-slot-h">lato con la foto</span><span class="pat-slot-cta">Tocca per fotografare</span></span><span class="pat-stato"></span><input type="file" id="patFronte" accept="image/*" onchange="scegliFotoPatente('fronte',this)"></label>
+<label class="pat-slot" id="patSlotRetro"><span class="pat-idle"><span class="pat-slot-ico">📷</span><span class="pat-slot-t">Retro</span><span class="pat-slot-h">lato con la tabella</span><span class="pat-slot-cta">Tocca per fotografare</span></span><span class="pat-stato"></span><input type="file" id="patRetro" accept="image/*" onchange="scegliFotoPatente('retro',this)"></label>
 </div>
-<button id="btnPatenteVerifica" class="targa-btn" onclick="verificaPatenteFoto()" disabled style="opacity:.5">🔍 Verifica patente</button>
-<div id="patenteEsito" style="font-size:13px;line-height:1.5;margin-top:12px;text-align:left"></div>
-<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:12px">Tocca un riquadro: puoi scattare la foto al momento o sceglierla dalla galleria. Inquadra il documento intero, a fuoco, senza riflessi. I dati vengono letti in automatico, niente da scrivere a mano.</div>
-<button id="btnPatenteChiudi" class="btn btn-outline" style="margin-top:10px;width:100%" onclick="chiudiPatenteView()">Esci</button>
+<div class="pat-tips"><span>💡</span><span>Patente su un piano, tutta nell'inquadratura, buona luce, niente riflessi. Va bene anche una foto già fatta dalla galleria.</span></div>
+<button id="btnPatenteVerifica" class="targa-btn" onclick="verificaPatenteFoto()" disabled style="opacity:.5">Scatta le 2 foto per continuare</button>
+<div id="patenteEsito" style="font-size:13px;line-height:1.5;margin-top:12px"></div>
+<div id="patenteNotaEsci" style="font-size:11px;color:var(--text3);margin-top:12px;line-height:1.4;display:none">Finché la patente non è verificata l'app resta bloccata.</div>
+<button id="btnPatenteChiudi" class="pat-exit" onclick="chiudiPatenteView()">Esci</button>
 </div></div>
 <div id="appView" class="app" style="display:none">
 <div id="offlineBanner" style="display:none;background:#dc2626;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;position:sticky;top:0;z-index:100">📵 Sei offline — verifica la connessione</div>
@@ -847,12 +856,12 @@ function mostraBloccoPatente(bloccante){
     patBloccante=!!bloccante;
     var st=statoPatente(),t,sub;
     if(st.stato==='scaduta'){t='Patente scaduta';sub='La tua patente risulta <strong style="color:#dc2626">scaduta il '+fmtDataIt(st.scadenza)+'</strong>. Non puoi guidare i mezzi aziendali: <strong>rinnovala</strong> e poi fotografa qui la patente nuova.'}
-    else if(st.stato==='mancante'){t='Fotografa la patente';sub='Per usare l\'app devi verificare la patente: scatta una foto del <strong>fronte</strong> e una del <strong>retro</strong>.'}
+    else if(st.stato==='mancante'){t='Fotografa la patente';sub='Per usare l\'app serve una verifica della patente. Bastano <strong>2 foto</strong>, ci vuole un minuto.'}
     else if(st.stato==='nonverificata'){t='Verifica la patente';sub='Da oggi la patente va verificata con una foto del <strong>fronte</strong> e del <strong>retro</strong>. Ci vuole un minuto.'}
-    else{t='Verifica patente';sub='Fotografa <strong>fronte</strong> e <strong>retro</strong> della patente: i dati vengono letti e verificati in automatico.'}
+    else{t='Verifica la patente';sub='Fotografa <strong>fronte</strong> e <strong>retro</strong> della patente: i dati vengono letti e controllati in automatico, non devi scrivere nulla.'}
     document.getElementById('patenteTitolo').textContent=t;
     document.getElementById('patenteSub').innerHTML=sub;
-    document.getElementById('btnPatenteChiudi').textContent=patBloccante?'Esci':'Chiudi';
+    document.getElementById('btnPatenteChiudi').textContent=patBloccante?'Esci dall\'app e rimanda':'Chiudi';document.getElementById('patenteNotaEsci').style.display=patBloccante?'block':'none';
     document.getElementById('patenteEsito').innerHTML='';
     ripristinaFotoPatente();
     document.getElementById('targaView').style.display='none';
@@ -861,24 +870,25 @@ function mostraBloccoPatente(bloccante){
 }
 function chiudiPatenteView(){document.getElementById('patenteView').style.display='none';if(patBloccante)doLogout()}
 function slotPatente(lato){return document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro')}
-function resetSlotPatente(lato){patFoto[lato]=null;setStatoSlot(lato,'');var sl=slotPatente(lato);sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
-function mostraSlotFoto(lato,src,stato){var sl=slotPatente(lato);sl.classList.add('ok');sl.querySelectorAll('span').forEach(function(x){x.style.display=x.className==='pat-stato'?'':'none'});var old=sl.querySelector('img');if(old)old.remove();var im=document.createElement('img');im.src=src;im.alt=lato;sl.insertBefore(im,sl.firstChild);setStatoSlot(lato,stato)}
-function setStatoSlot(lato,t){var e=slotPatente(lato).querySelector('.pat-stato');if(e)e.textContent=t||''}
+function resetSlotPatente(lato){patFoto[lato]=null;setStatoSlot(lato,'');var sl=slotPatente(lato);sl.classList.remove('ok','carico');sl.querySelector('img')&&sl.querySelector('img').remove();var inp=sl.querySelector('input');if(inp)inp.value=''}
+function mostraSlotFoto(lato,src,stato){var sl=slotPatente(lato);sl.classList.add('ok');var old=sl.querySelector('img');if(old)old.remove();var im=document.createElement('img');im.src=src;im.alt=lato;sl.insertBefore(im,sl.firstChild);setStatoSlot(lato,stato)}
+function setStatoSlot(lato,t){var sl=slotPatente(lato),e=sl.querySelector('.pat-stato');if(e)e.textContent=t||'';sl.classList.toggle('carico',/⏳/.test(t||''))}
+function latoLabel(lato){return lato==='fronte'?'Fronte':'Retro'}
 // patFoto[lato]: null | Blob (da caricare) | 'caricata' (già su Storage patenti/{uid}/{lato}.jpg)
 function patKey(lato){return 'patFoto_'+(auth.currentUser?auth.currentUser.uid:'')+'_'+lato}
 function patRef(lato){return firebase.storage().ref('patenti/'+auth.currentUser.uid+'/'+lato+'.jpg')}
 function segnaFotoCaricata(lato,ok){try{if(ok)localStorage.setItem(patKey(lato),String(Date.now()));else localStorage.removeItem(patKey(lato))}catch(e){}}
-async function caricaFotoPatente(lato){var b=patFoto[lato];if(!b||b==='caricata')return;setStatoSlot(lato,'⏳ carico...');await patRef(lato).put(b,{contentType:'image/jpeg'});patFoto[lato]='caricata';segnaFotoCaricata(lato,true);setStatoSlot(lato,'✓ caricata')}
+async function caricaFotoPatente(lato){var b=patFoto[lato];if(!b||b==='caricata')return;setStatoSlot(lato,'⏳ Carico la foto...');await patRef(lato).put(b,{contentType:'image/jpeg'});patFoto[lato]='caricata';segnaFotoCaricata(lato,true);setStatoSlot(lato,'✓ '+latoLabel(lato)+' inserito')}
 // Su molti telefoni il browser ricarica la pagina mentre è aperta la fotocamera (poca memoria):
 // le foto già salvate su Storage nelle ultime 2 ore vengono ripristinate, così il driver non riparte da zero.
 async function ripristinaFotoPatente(){
     resetSlotPatente('fronte');resetSlotPatente('retro');aggiornaBtnPatente();
     if(!auth.currentUser)return;
     var lati=['fronte','retro'].filter(function(l){try{var t=+localStorage.getItem(patKey(l));return t&&Date.now()-t<2*3600*1000}catch(e){return false}});
-    for(var i=0;i<lati.length;i++){var l=lati[i];try{var url=await patRef(l).getDownloadURL();patFoto[l]='caricata';mostraSlotFoto(l,url,'✓ caricata')}catch(e){segnaFotoCaricata(l,false)}}
+    for(var i=0;i<lati.length;i++){var l=lati[i];try{var url=await patRef(l).getDownloadURL();patFoto[l]='caricata';mostraSlotFoto(l,url,'✓ '+latoLabel(l)+' inserito')}catch(e){segnaFotoCaricata(l,false)}}
     aggiornaBtnPatente();
 }
-function aggiornaBtnPatente(){var b=document.getElementById('btnPatenteVerifica');var ok=!!(patFoto.fronte&&patFoto.retro);b.disabled=!ok;b.style.opacity=ok?'1':'.5'}
+function aggiornaBtnPatente(){var b=document.getElementById('btnPatenteVerifica');var f=!!patFoto.fronte,r=!!patFoto.retro,ok=f&&r;b.disabled=!ok;b.style.opacity=ok?'1':'.5';b.textContent=ok?'🔍 Verifica patente':(!f&&!r?'Scatta le 2 foto per continuare':!f?'Manca la foto del fronte':'Manca la foto del retro')}
 // Ridimensiona a max 1600px lato lungo, JPEG 0.85 (≈300-600 KB): upload veloce, lettura AI ok
 function ridimensionaFoto(file){return new Promise(function(resolve,reject){var url=URL.createObjectURL(file);var img=new Image();img.onload=function(){try{var MAX=1600,w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,MAX/Math.max(w,h));var c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?resolve(b):reject(new Error('conversione fallita'))},'image/jpeg',0.85)}catch(e){reject(e)}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('immagine non leggibile'))};img.src=url})}
 async function scegliFotoPatente(lato,input){
@@ -887,20 +897,20 @@ async function scegliFotoPatente(lato,input){
     var blob;
     try{blob=await ridimensionaFoto(f)}catch(e){showToast('Foto non utilizzabile: '+errMsg(e));input.value='';return}
     patFoto[lato]=blob;segnaFotoCaricata(lato,false);
-    mostraSlotFoto(lato,URL.createObjectURL(blob),'');
+    mostraSlotFoto(lato,URL.createObjectURL(blob),'✓ '+latoLabel(lato)+' inserito');
     aggiornaBtnPatente();
     // upload subito: se la pagina si ricarica, la foto non va persa
-    try{await caricaFotoPatente(lato)}catch(e){console.warn('upload '+lato,e);setStatoSlot(lato,'')}
+    try{await caricaFotoPatente(lato)}catch(e){console.warn('upload '+lato,e);setStatoSlot(lato,'✓ '+latoLabel(lato)+' inserito')}
 }
 async function verificaPatenteFoto(){
     if(!auth.currentUser||!dp||!dp.id){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(!patFoto.fronte||!patFoto.retro){showToast('Servono entrambe le foto: fronte e retro');return}
     if(submitting)return;submitting=true;
     var esito=document.getElementById('patenteEsito');
-    setBtn('btnPatenteVerifica',true,'');document.getElementById('btnPatenteVerifica').textContent='⏳ Carico le foto...';
+    setBtn('btnPatenteVerifica',true,'');document.getElementById('btnPatenteVerifica').textContent='⏳ Carico le foto...';esito.innerHTML='';
     try{
         await caricaFotoPatente('fronte');await caricaFotoPatente('retro');
-        document.getElementById('btnPatenteVerifica').textContent='🔍 Verifico il documento...';
+        document.getElementById('btnPatenteVerifica').textContent='🔍 Leggo il documento... (circa 10 secondi)';
         var tok=await auth.currentUser.getIdToken();
         var r=await fetch(VERIFICA_PATENTE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:'{}'});
         var j=null;try{j=await r.json()}catch(e){}
@@ -909,19 +919,19 @@ async function verificaPatenteFoto(){
         if(j.stato==='verificata'){
             dp.numeroPatente=j.numero;dp.scadenzaPatente=j.scadenza;dp.patenteVerifica={stato:'verificata',il:new Date().toISOString()};
             caricaDatiProfilo();
-            esito.innerHTML='<div style="background:#ecfdf5;border:1px solid #6ee7b7;border-radius:10px;padding:10px 12px;color:#065f46"><strong>✅ Patente verificata.</strong> N. '+escapeHtml(j.numero)+', scade il '+fmtDataIt(j.scadenza)+'.</div>';
+            esito.innerHTML='<div class="pat-esito-ok"><div class="big">✅</div><strong>Patente verificata!</strong><br>N. '+escapeHtml(j.numero)+' · scade il '+fmtDataIt(j.scadenza)+'<br><span style="font-size:12px">Ti porto all\'app...</span></div>';
             showToast('Patente verificata. Buon lavoro!');
             aggiornaBannerPatente();
             setTimeout(function(){document.getElementById('patenteView').style.display='none';if(patBloccante){patBloccante=false;avviaIngresso()}},1600);
         }else{
             if(j.scadenza){dp.scadenzaPatente=j.scadenza}
             dp.patenteVerifica={stato:'respinta',motivo:j.motivo};
-            esito.innerHTML='<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;color:#991b1b"><strong>❌ Non verificata.</strong> '+escapeHtml(j.motivo||'')+'<br><span style="font-size:12px">Rifai le foto oppure scrivi a <a href="mailto:risorse.umane@last-mile.it">risorse.umane@last-mile.it</a>.</span></div>';
+            esito.innerHTML='<div class="pat-esito-ko"><div class="t">❌ Non sono riuscito a verificarla</div>'+escapeHtml(j.motivo||'')+'<div style="margin-top:6px;font-size:12px"><strong>Rifai le 2 foto</strong> seguendo i consigli qui sopra. Se il problema resta, scrivi a <a href="mailto:risorse.umane@last-mile.it">risorse.umane@last-mile.it</a>.</div></div>';
             resetSlotPatente('fronte');resetSlotPatente('retro');
         }
     }catch(e){
-        esito.innerHTML='<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 12px;color:#991b1b">⚠️ '+escapeHtml(errMsg(e))+'</div>';
-    }finally{submitting=false;document.getElementById('btnPatenteVerifica').textContent='🔍 Verifica patente';aggiornaBtnPatente()}
+        esito.innerHTML='<div class="pat-esito-ko"><div class="t">⚠️ Qualcosa non ha funzionato</div>'+escapeHtml(errMsg(e))+'<div style="margin-top:6px;font-size:12px">Controlla la connessione e tocca di nuovo <strong>Verifica patente</strong>: le foto sono salvate, non serve rifarle.</div></div>';
+    }finally{submitting=false;aggiornaBtnPatente()}
 }
 // Banner giallo in tab Oggi: in scadenza (≤30 gg) oppure verifica foto da fare entro la data limite
 function aggiornaBannerPatente(){
