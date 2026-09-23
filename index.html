@@ -861,7 +861,7 @@ function mostraBloccoPatente(bloccante){
 }
 function chiudiPatenteView(){document.getElementById('patenteView').style.display='none';if(patBloccante)doLogout()}
 function slotPatente(lato){return document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro')}
-function resetSlotPatente(lato){patFoto[lato]=null;var sl=slotPatente(lato);sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
+function resetSlotPatente(lato){patFoto[lato]=null;setStatoSlot(lato,'');var sl=slotPatente(lato);sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
 function mostraSlotFoto(lato,src,stato){var sl=slotPatente(lato);sl.classList.add('ok');sl.querySelectorAll('span').forEach(function(x){x.style.display=x.className==='pat-stato'?'':'none'});var old=sl.querySelector('img');if(old)old.remove();var im=document.createElement('img');im.src=src;im.alt=lato;sl.insertBefore(im,sl.firstChild);setStatoSlot(lato,stato)}
 function setStatoSlot(lato,t){var e=slotPatente(lato).querySelector('.pat-stato');if(e)e.textContent=t||''}
 // patFoto[lato]: null | Blob (da caricare) | 'caricata' (già su Storage patenti/{uid}/{lato}.jpg)
