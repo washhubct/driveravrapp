@@ -36,7 +36,7 @@
 .targa-hello{font-size:24px;margin-bottom:4px}
 .targa-name{font-size:20px;font-weight:800;color:var(--navy);margin-bottom:4px}
 .targa-sub{font-size:14px;color:var(--text2);margin-bottom:24px;line-height:1.5}
-.pat-slot{flex:1;border:2px dashed var(--border);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;overflow:hidden}.pat-slot img{max-width:100%;max-height:90px;border-radius:8px;object-fit:cover}.pat-slot.ok{border-style:solid;border-color:var(--success)}.pat-slot-ico{font-size:26px}
+.pat-slot{flex:1;position:relative;border:2px dashed var(--border);border-radius:12px;padding:10px 6px;text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text2);background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:110px;overflow:hidden}.pat-slot img{max-width:100%;max-height:90px;border-radius:8px;object-fit:cover}.pat-slot.ok{border-style:solid;border-color:var(--success)}.pat-slot-ico{font-size:26px}.pat-slot img,.pat-slot span{pointer-events:none}.pat-slot input[type=file]{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}.pat-slot .pat-stato{position:absolute;left:0;right:0;bottom:0;background:rgba(15,29,61,0.75);color:#fff;font-size:10px;font-weight:600;padding:2px 4px;display:none}.pat-slot.ok .pat-stato{display:block}
 .targa-input{width:100%;padding:18px;background:var(--bg);border:2px solid var(--border);border-radius:12px;color:var(--navy);font-family:var(--font);font-size:22px;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:3px;outline:none;margin-bottom:16px}.targa-input:focus{border-color:var(--blue)}
 .targa-btn{width:100%;padding:16px;background:var(--navy);color:#fff;border:none;border-radius:12px;font-family:var(--font);font-size:16px;font-weight:700;cursor:pointer}.targa-btn:active{transform:scale(0.98)}
 .kpi-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.kpi{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}.kpi.wide{grid-column:span 2}.kpi.accent{background:var(--navy);border-color:var(--navy);color:#fff}.kpi.accent .kpi-label{color:rgba(255,255,255,0.6)}.kpi.accent .kpi-sub{color:rgba(255,255,255,0.5)}.kpi-label{font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}.kpi-val{font-size:28px;font-weight:800;color:var(--navy);line-height:1.1}.kpi.accent .kpi-val{color:#fff}.kpi-sub{font-size:11px;color:var(--text3);margin-top:4px}
@@ -172,12 +172,12 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="targa-name" id="patenteTitolo">Patente</div>
 <div class="targa-sub" id="patenteSub" style="margin-bottom:14px">—</div>
 <div style="display:flex;gap:10px;margin-bottom:12px">
-<label class="pat-slot" id="patSlotFronte"><input type="file" id="patFronte" accept="image/*" capture="environment" style="display:none" onchange="scegliFotoPatente('fronte',this)"><span class="pat-slot-ico">📷</span><span>Fronte</span></label>
-<label class="pat-slot" id="patSlotRetro"><input type="file" id="patRetro" accept="image/*" capture="environment" style="display:none" onchange="scegliFotoPatente('retro',this)"><span class="pat-slot-ico">📷</span><span>Retro</span></label>
+<label class="pat-slot" id="patSlotFronte"><span class="pat-slot-ico">📷</span><span>Fronte</span><span class="pat-stato"></span><input type="file" id="patFronte" accept="image/*" onchange="scegliFotoPatente('fronte',this)"></label>
+<label class="pat-slot" id="patSlotRetro"><span class="pat-slot-ico">📷</span><span>Retro</span><span class="pat-stato"></span><input type="file" id="patRetro" accept="image/*" onchange="scegliFotoPatente('retro',this)"></label>
 </div>
 <button id="btnPatenteVerifica" class="targa-btn" onclick="verificaPatenteFoto()" disabled style="opacity:.5">🔍 Verifica patente</button>
 <div id="patenteEsito" style="font-size:13px;line-height:1.5;margin-top:12px;text-align:left"></div>
-<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:12px">Le foto vengono lette in automatico per controllare nome, numero e scadenza. Inquadra il documento intero, a fuoco, senza riflessi. Nessun dato va inserito a mano.</div>
+<div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:12px">Tocca un riquadro: puoi scattare la foto al momento o sceglierla dalla galleria. Inquadra il documento intero, a fuoco, senza riflessi. I dati vengono letti in automatico, niente da scrivere a mano.</div>
 <button id="btnPatenteChiudi" class="btn btn-outline" style="margin-top:10px;width:100%" onclick="chiudiPatenteView()">Esci</button>
 </div></div>
 <div id="appView" class="app" style="display:none">
@@ -853,30 +853,44 @@ function mostraBloccoPatente(bloccante){
     document.getElementById('patenteTitolo').textContent=t;
     document.getElementById('patenteSub').innerHTML=sub;
     document.getElementById('btnPatenteChiudi').textContent=patBloccante?'Esci':'Chiudi';
-    resetSlotPatente('fronte');resetSlotPatente('retro');
     document.getElementById('patenteEsito').innerHTML='';
-    aggiornaBtnPatente();
+    ripristinaFotoPatente();
     document.getElementById('targaView').style.display='none';
     if(patBloccante)document.getElementById('appView').style.display='none';
     document.getElementById('patenteView').style.display='flex';
 }
 function chiudiPatenteView(){document.getElementById('patenteView').style.display='none';if(patBloccante)doLogout()}
-function resetSlotPatente(lato){patFoto[lato]=null;var sl=document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro');sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
+function slotPatente(lato){return document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro')}
+function resetSlotPatente(lato){patFoto[lato]=null;var sl=slotPatente(lato);sl.classList.remove('ok');sl.querySelector('img')&&sl.querySelector('img').remove();sl.querySelectorAll('span').forEach(function(x){x.style.display=''});var inp=sl.querySelector('input');if(inp)inp.value=''}
+function mostraSlotFoto(lato,src,stato){var sl=slotPatente(lato);sl.classList.add('ok');sl.querySelectorAll('span').forEach(function(x){x.style.display=x.className==='pat-stato'?'':'none'});var old=sl.querySelector('img');if(old)old.remove();var im=document.createElement('img');im.src=src;im.alt=lato;sl.insertBefore(im,sl.firstChild);setStatoSlot(lato,stato)}
+function setStatoSlot(lato,t){var e=slotPatente(lato).querySelector('.pat-stato');if(e)e.textContent=t||''}
+// patFoto[lato]: null | Blob (da caricare) | 'caricata' (già su Storage patenti/{uid}/{lato}.jpg)
+function patKey(lato){return 'patFoto_'+(auth.currentUser?auth.currentUser.uid:'')+'_'+lato}
+function patRef(lato){return firebase.storage().ref('patenti/'+auth.currentUser.uid+'/'+lato+'.jpg')}
+function segnaFotoCaricata(lato,ok){try{if(ok)localStorage.setItem(patKey(lato),String(Date.now()));else localStorage.removeItem(patKey(lato))}catch(e){}}
+async function caricaFotoPatente(lato){var b=patFoto[lato];if(!b||b==='caricata')return;setStatoSlot(lato,'⏳ carico...');await patRef(lato).put(b,{contentType:'image/jpeg'});patFoto[lato]='caricata';segnaFotoCaricata(lato,true);setStatoSlot(lato,'✓ caricata')}
+// Su molti telefoni il browser ricarica la pagina mentre è aperta la fotocamera (poca memoria):
+// le foto già salvate su Storage nelle ultime 2 ore vengono ripristinate, così il driver non riparte da zero.
+async function ripristinaFotoPatente(){
+    resetSlotPatente('fronte');resetSlotPatente('retro');aggiornaBtnPatente();
+    if(!auth.currentUser)return;
+    var lati=['fronte','retro'].filter(function(l){try{var t=+localStorage.getItem(patKey(l));return t&&Date.now()-t<2*3600*1000}catch(e){return false}});
+    for(var i=0;i<lati.length;i++){var l=lati[i];try{var url=await patRef(l).getDownloadURL();patFoto[l]='caricata';mostraSlotFoto(l,url,'✓ caricata')}catch(e){segnaFotoCaricata(l,false)}}
+    aggiornaBtnPatente();
+}
 function aggiornaBtnPatente(){var b=document.getElementById('btnPatenteVerifica');var ok=!!(patFoto.fronte&&patFoto.retro);b.disabled=!ok;b.style.opacity=ok?'1':'.5'}
 // Ridimensiona a max 1600px lato lungo, JPEG 0.85 (≈300-600 KB): upload veloce, lettura AI ok
 function ridimensionaFoto(file){return new Promise(function(resolve,reject){var url=URL.createObjectURL(file);var img=new Image();img.onload=function(){try{var MAX=1600,w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,MAX/Math.max(w,h));var c=document.createElement('canvas');c.width=Math.round(w*k);c.height=Math.round(h*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);c.toBlob(function(b){b?resolve(b):reject(new Error('conversione fallita'))},'image/jpeg',0.85)}catch(e){reject(e)}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('immagine non leggibile'))};img.src=url})}
 async function scegliFotoPatente(lato,input){
     var f=input.files&&input.files[0];if(!f)return;
-    if(!/^image\//.test(f.type)){showToast('Seleziona una foto');input.value='';return}
-    try{
-        var blob=await ridimensionaFoto(f);
-        patFoto[lato]=blob;
-        var sl=document.getElementById(lato==='fronte'?'patSlotFronte':'patSlotRetro');
-        sl.classList.add('ok');sl.querySelectorAll('span').forEach(function(x){x.style.display='none'});
-        var old=sl.querySelector('img');if(old)old.remove();
-        var im=document.createElement('img');im.src=URL.createObjectURL(blob);im.alt=lato;sl.appendChild(im);
-    }catch(e){showToast('Foto non utilizzabile: '+errMsg(e));input.value=''}
+    if(f.type?!/^image\//.test(f.type):!/\.(jpe?g|png|webp|heic|heif)$/i.test(f.name||'')){showToast('Seleziona una foto');input.value='';return}
+    var blob;
+    try{blob=await ridimensionaFoto(f)}catch(e){showToast('Foto non utilizzabile: '+errMsg(e));input.value='';return}
+    patFoto[lato]=blob;segnaFotoCaricata(lato,false);
+    mostraSlotFoto(lato,URL.createObjectURL(blob),'');
     aggiornaBtnPatente();
+    // upload subito: se la pagina si ricarica, la foto non va persa
+    try{await caricaFotoPatente(lato)}catch(e){console.warn('upload '+lato,e);setStatoSlot(lato,'')}
 }
 async function verificaPatenteFoto(){
     if(!auth.currentUser||!dp||!dp.id){showToast('Sessione scaduta. Ricarica la pagina.');return}
@@ -885,14 +899,13 @@ async function verificaPatenteFoto(){
     var esito=document.getElementById('patenteEsito');
     setBtn('btnPatenteVerifica',true,'');document.getElementById('btnPatenteVerifica').textContent='⏳ Carico le foto...';
     try{
-        var uid=auth.currentUser.uid;
-        await firebase.storage().ref('patenti/'+uid+'/fronte.jpg').put(patFoto.fronte,{contentType:'image/jpeg'});
-        await firebase.storage().ref('patenti/'+uid+'/retro.jpg').put(patFoto.retro,{contentType:'image/jpeg'});
+        await caricaFotoPatente('fronte');await caricaFotoPatente('retro');
         document.getElementById('btnPatenteVerifica').textContent='🔍 Verifico il documento...';
         var tok=await auth.currentUser.getIdToken();
         var r=await fetch(VERIFICA_PATENTE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:'{}'});
         var j=null;try{j=await r.json()}catch(e){}
         if(!r.ok){throw new Error((j&&j.error)||('errore '+r.status))}
+        segnaFotoCaricata('fronte',false);segnaFotoCaricata('retro',false);
         if(j.stato==='verificata'){
             dp.numeroPatente=j.numero;dp.scadenzaPatente=j.scadenza;dp.patenteVerifica={stato:'verificata',il:new Date().toISOString()};
             caricaDatiProfilo();
