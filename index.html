@@ -914,7 +914,7 @@ async function verificaPatenteFoto(){
         var tok=await auth.currentUser.getIdToken();
         var r=await fetch(VERIFICA_PATENTE_URL,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+tok},body:'{}'});
         var j=null;try{j=await r.json()}catch(e){}
-        if(!r.ok){throw new Error((j&&j.error)||('errore '+r.status))}
+        if(!r.ok){var er=new Error((j&&j.error)||('errore '+r.status));er.ritenta=!(j&&j.ritenta===false);throw er}
         segnaFotoCaricata('fronte',false);segnaFotoCaricata('retro',false);
         if(j.stato==='verificata'){
             dp.numeroPatente=j.numero;dp.scadenzaPatente=j.scadenza;dp.patenteVerifica={stato:'verificata',il:new Date().toISOString()};
@@ -930,7 +930,8 @@ async function verificaPatenteFoto(){
             resetSlotPatente('fronte');resetSlotPatente('retro');
         }
     }catch(e){
-        esito.innerHTML='<div class="pat-esito-ko"><div class="t">⚠️ Qualcosa non ha funzionato</div>'+escapeHtml(errMsg(e))+'<div style="margin-top:6px;font-size:12px">Controlla la connessione e tocca di nuovo <strong>Verifica patente</strong>: le foto sono salvate, non serve rifarle.</div></div>';
+        var hint=e&&e.ritenta===false?'Non serve riprovare adesso: le foto restano salvate, ti avvisiamo noi quando la verifica è di nuovo attiva.':'Controlla la connessione e tocca di nuovo <strong>Verifica patente</strong>: le foto sono salvate, non serve rifarle.';
+        esito.innerHTML='<div class="pat-esito-ko"><div class="t">⚠️ Qualcosa non ha funzionato</div>'+escapeHtml(errMsg(e))+'<div style="margin-top:6px;font-size:12px">'+hint+'</div></div>';
     }finally{submitting=false;aggiornaBtnPatente()}
 }
 // Banner giallo in tab Oggi: in scadenza (≤30 gg) oppure verifica foto da fare entro la data limite
