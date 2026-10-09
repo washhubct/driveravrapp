@@ -1,7 +1,7 @@
 {
   "name": "Last Mile Driver",
   "short_name": "Last Mile",
-  "description": "App consegne per i driver Last Mile / AVR Logistic",
+  "description": "App consegne per i driver Last Mile",
   "lang": "it",
   "start_url": "./",
   "scope": "./",
