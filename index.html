@@ -158,8 +158,10 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div id="lbIntroView" class="targa-overlay" style="display:none">
 <div class="intro-card">
 <div style="text-align:center;font-size:44px;margin-bottom:8px">🏆</div>
-<h2>Novità: Classifica con premi!</h2>
-<div class="intro-point"><span class="ic">🎁</span><span>Ogni mese i primi 3 driver in classifica vincono <strong>buoni pasto</strong>: <strong>€100</strong> al 1° posto, <strong>€70</strong> al 2° e <strong>€40</strong> al 3°.</span></div>
+<h2>Nuova classifica: una per provincia!</h2>
+<div class="intro-point"><span class="ic">📍</span><span>Gareggi solo con i colleghi della <strong>tua provincia</strong> (Catania, Messina, Palermo o Siracusa).</span></div>
+<div class="intro-point"><span class="ic">🎁</span><span>Il <strong>montepremi cresce con le consegne di tutta la squadra</strong>: 6 centesimi a consegna, da €100 fino a €500 al mese. I primi 3 vincono <strong>buoni carburante Q8 o buoni Amazon</strong>, scegli tu.</span></div>
+<div class="intro-point"><span class="ic">✅</span><span>Per ritirare il premio servono almeno <strong>12 giorni lavorati</strong>, <strong>zero danni</strong> e la <strong>patente verificata</strong> nell'app.</span></div>
 <div class="intro-point"><span class="ic">📦</span><span>Guadagni <strong>1 punto per ogni consegna</strong> registrata nell'app.</span></div>
 <div class="intro-point"><span class="ic">⚡</span><span>Sei veloce? Tempo medio sotto i <strong>20 minuti</strong> a consegna = <strong>+30 punti</strong>, sotto i 25 = +15. Ricordati di inserire gli orari di inizio e fine giro!</span></div>
 <div class="intro-point"><span class="ic">🛡️</span><span>Zero danni nel mese = <strong>+50 punti</strong>. Ogni danno = −30.</span></div>
@@ -294,22 +296,22 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="kpi-row"><div class="kpi accent wide"><div class="kpi-label">Consegne mese corrente</div><div class="kpi-val" id="kCompenso">0</div><div class="kpi-sub" id="kCompDetail">—</div></div></div>
 <div class="section-title">Storico mensile</div><div id="listaCompensi"></div></div>
 <div id="tabClassifica" class="screen">
-<div class="premi-banner">
-<div class="premi-title">🏆 Premi del mese — Buoni pasto</div>
-<div class="premi-row">
-<div class="premi-item"><div class="premi-medal">🥇</div><div class="premi-val">€100</div><div class="premi-pos">1° posto</div></div>
-<div class="premi-item big"><div class="premi-medal">🥈</div><div class="premi-val">€70</div><div class="premi-pos">2° posto</div></div>
-<div class="premi-item"><div class="premi-medal">🥉</div><div class="premi-val">€40</div><div class="premi-pos">3° posto</div></div>
+<div class="premi-banner" id="premiBanner">
+<div class="premi-title">🏆 Montepremi del mese</div>
+<div class="premi-note">Caricamento…</div>
 </div>
-<div class="premi-note">Assegnati ogni fine mese in base alla classifica</div>
-</div>
-<div class="section-title">🏆 Classifica del mese</div>
+<div class="section-title" id="lbTitolo">🏆 Classifica del mese</div>
 <div id="leaderboardTab" class="leaderboard"></div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow);font-size:12px;color:var(--text2);line-height:1.6">
-<strong>Come si guadagnano punti</strong><br>
+<strong>Come funziona</strong><br>
+📍 Una classifica per provincia: gareggi con i colleghi della tua zona<br>
 📦 1 consegna = 1 punto<br>
 ⚡ Velocità: tempo medio sotto 20 min/consegna = +30 pt, sotto 25 min = +15 pt (conta da 10 consegne con orari registrati nel mese)<br>
 🛡️ Zero danni nel mese = +50 pt · ogni danno = −30 pt<br>
+🎁 Montepremi = 6 cent per ogni consegna della squadra (da €100 a €500): 50/30/20% ai primi 3, oppure 60/40% se siete meno di 5<br>
+✅ Premiabile con almeno 12 giorni lavorati, zero danni e patente verificata: se manca un requisito il premio passa al successivo<br>
+📈 I premi si pagano se la provincia fa almeno l'85% delle consegne medie degli ultimi 3 mesi<br>
+🛒 Premio: buono carburante Q8 o buono Amazon, scegli tu<br>
 <span style="color:var(--text3);font-size:11px;display:block;margin-top:8px">🔒 La classifica è anonima (nickname) e riservata ai driver Last Mile: non condividerla con nessuno al di fuori dell'azienda.</span>
 </div>
 </div>
@@ -637,12 +639,12 @@ function renderTrendMobile(posPrec,posCorrente){
 
 // Popup primo accesso classifica — mostrato una sola volta per dispositivo
 function maybeShowLbIntro(){
-    try{if(localStorage.getItem('avrLbIntro_v1'))return}catch(e){return}
+    try{if(localStorage.getItem('lmLbIntro_v2'))return}catch(e){return}
     document.getElementById('lbIntroView').style.display='flex';
 }
 function chiudiLbIntro(){
     document.getElementById('lbIntroView').style.display='none';
-    try{localStorage.setItem('avrLbIntro_v1','1')}catch(e){}
+    try{localStorage.setItem('lmLbIntro_v2','1')}catch(e){}
     showTab('classifica');
 }
 
@@ -666,14 +668,44 @@ async function getMyLbHash(){
     return myLbHash;
 }
 
+var LB_PROVINCE=['CT','ME','PA','SR'];
+function renderPremiBanner(data){
+    var el=document.getElementById('premiBanner');if(!el)return;
+    if(!data){el.innerHTML='<div class="premi-title">🏆 Montepremi del mese</div><div class="premi-note">La classifica a premi è per provincia (Catania, Messina, Palermo, Siracusa): per la tua zona non è ancora attiva.</div>';return}
+    var imp=data.importi||[],med=['🥇','🥈','🥉'],s=data.soglia||{};
+    var items=imp.length?imp.map(function(x,i){return '<div class="premi-item"><div class="premi-medal">'+med[i]+'</div><div class="premi-val">€'+x+'</div><div class="premi-pos">'+(i+1)+'° posto</div></div>'}).join(''):'<div class="premi-note">Servono almeno 3 driver in provincia per i premi</div>';
+    var stato='';
+    if(s.richiesto){stato=data.inCorso?(s.proiezioneOk?'📈 Squadra in linea con la soglia ('+s.richiesto+' consegne nel mese)':'⚠️ Sotto soglia: servono '+s.richiesto+' consegne nel mese, siete a '+s.consegne):(s.superata?'✓ Soglia superata, premi confermati':'✗ Soglia non raggiunta ('+s.consegne+' su '+s.richiesto+'): premi sospesi')}
+    el.innerHTML='<div class="premi-title">🏆 Montepremi '+cn(data.provincia)+' — €'+data.montepremi+'</div>'+
+        '<div class="premi-row">'+items+'</div>'+
+        '<div class="premi-note">'+(data.consegne||0)+' consegne di squadra × 6 cent · buono Q8 o Amazon a scelta'+(stato?'<br>'+stato:'')+'</div>';
+}
+var LB_MOTIVI={giorni:'servono 12 giorni lavorati',danni:'danno nel mese',patente:'patente da verificare'};
+function lbNotaPremio(entry){
+    if(entry.premio>0)return '<span class="lb-you" style="background:rgba(245,158,11,0.15);color:#b45309">🎁 €'+entry.premio+'</span>';
+    if(entry.premiabile===false)return '<span style="font-size:10px;color:var(--text3)" title="Non premiabile">✗ '+(entry.motiviNonPremiabile||[]).map(function(m){return LB_MOTIVI[m]||m}).join(', ')+'</span>';
+    return '';
+}
 async function loadLeaderboard(){
     var meseCorrente=meseCorrenteRoma();
     var myHash=await getMyLbHash();
     var myName=(dp.cognome||'').toUpperCase().trim();
+    var prov=(dp.citta||'').toUpperCase().trim();
+    var tit=document.getElementById('lbTitolo');
+
+    if(LB_PROVINCE.indexOf(prov)<0){
+        renderPremiBanner(null);
+        if(tit)tit.textContent='🏆 Classifica del mese';
+        setLeaderboardHtml('<div class="empty" style="padding:20px"><div class="empty-icon">📍</div><p>Nessuna classifica a premi per la tua zona</p><p style="font-size:12px;margin-top:4px;color:var(--text3)">Le classifiche sono per provincia: Catania, Messina, Palermo e Siracusa.</p></div>');
+        return;
+    }
+    if(tit)tit.textContent='🏆 Classifica '+cn(prov);
 
     try{
-        var doc=await db.collection('leaderboard').doc(meseCorrente).get();
+        var doc=await db.collection('leaderboard').doc(meseCorrente+'_'+prov).get();
+        if(doc.exists)renderPremiBanner(doc.data());
         if(!doc.exists||((doc.data().drivers||[]).length===0)){
+            if(!doc.exists)renderPremiBanner({provincia:prov,montepremi:100,importi:[],consegne:0,soglia:{},inCorso:true});
             // Empty state motivante: distinguiamo "primo del mese / nessun report ancora"
             // dal "tu non hai ancora consegne" (basato su reports caricati)
             var hasMyReports=reports.some(function(r){
@@ -707,10 +739,11 @@ async function loadLeaderboard(){
             var youTag=isMe?'<span class="lb-you">SEI TU!</span>':'';
             var bonusTag=(entry.bonusVelocita>0?'<span class="lb-bonus" title="Bonus velocità">⚡</span>':'')+(entry.bonusZeroDanni?'<span class="lb-bonus">🛡️</span>':'');
             var trend=renderTrendMobile(entry.posPrec,pos);
+            var nota=lbNotaPremio(entry);
 
             html+='<div class="lb-row'+(isMe?' me':'')+'">'+
                 '<div class="lb-pos '+posClass+'">'+medal+'</div>'+
-                '<div class="lb-nick">'+nick+bonusTag+youTag+'<div class="lb-trend-wrap">'+trend+'</div></div>'+
+                '<div class="lb-nick">'+nick+bonusTag+youTag+'<div class="lb-trend-wrap">'+trend+(entry.giorni!=null?' · '+entry.giorni+' gg':'')+(nota?' · '+nota:'')+'</div></div>'+
                 '<div class="lb-score">'+entry.score+' <span>punti</span></div>'+
             '</div>';
         });
@@ -724,7 +757,7 @@ async function loadLeaderboard(){
             html+='<div class="lb-row me" style="border-top:2px dashed var(--border)">'+
                 '<div class="lb-pos normal">'+(myPos+1)+'°</div>'+
                 '<div class="lb-nick">'+getNickname(myData.h||myName)+myBonus+'<span class="lb-you">SEI TU!</span>'+
-                  '<div class="lb-trend-wrap">'+myTrend+' · top '+percentile+'%</div>'+
+                  '<div class="lb-trend-wrap">'+myTrend+' · top '+percentile+'%'+(myData.giorni!=null?' · '+myData.giorni+' gg':'')+(lbNotaPremio(myData)?' · '+lbNotaPremio(myData):'')+'</div>'+
                 '</div>'+
                 '<div class="lb-score">'+myData.score+' <span>punti</span></div>'+
             '</div>';
@@ -741,7 +774,7 @@ async function loadLeaderboard(){
 
         html+='<div style="padding:10px 16px;font-size:10px;color:var(--text3);border-top:1px solid var(--border)">'+
             '1 consegna = 1 pt · ⚡ Velocità = +30/+15 pt · 🛡️ Zero danni = +50 pt · Danno = -30 pt<br>'+
-            '🏆 Premi mensili in buoni pasto: 🥇 €100 · 🥈 €70 · 🥉 €40</div>';
+            '🎁 Montepremi '+cn(prov)+' €'+(data.montepremi||0)+' · premi: '+((data.importi||[]).length?(data.importi||[]).map(function(x,i){return ['🥇','🥈','🥉'][i]+' €'+x}).join(' · '):'servono 3 driver')+' · buono Q8 o Amazon</div>';
 
         setLeaderboardHtml(html);
     }catch(e){
