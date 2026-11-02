@@ -169,6 +169,9 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-blue" onclick="chiudiLbIntro()" style="font-size:15px">Ho capito, si va! 🚀</button>
 </div>
 </div>
+<div id="pushView" class="targa-overlay" style="display:none">
+<div class="intro-card" id="pushCard"></div>
+</div>
 <div id="targaView" class="targa-overlay" style="display:none">
 <div class="targa-card">
 <div class="targa-hello">👋</div>
@@ -202,6 +205,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="app-body">
 <div id="tabOggi" class="screen active">
 <div id="patenteBanner" onclick="mostraBloccoPatente(false)" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;cursor:pointer"></div>
+<div id="pushBanner" onclick="apriInvitoPush()" style="display:none;background:#fef3c7;color:#78350f;border:1px solid #fbbf24;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px;font-weight:600;cursor:pointer">🔔 Notifiche non attive: tocca qui per attivarle e seguire classifica e premi</div>
 <div id="motivationalBanner" class="motiv-banner"></div>
 <div class="kpi-row"><div class="kpi accent"><div class="kpi-label">Oggi</div><div class="kpi-val" id="kOggi">0</div><div class="kpi-sub">consegne</div></div><div class="kpi"><div class="kpi-label">Questo mese</div><div class="kpi-val" id="kMese">0</div><div class="kpi-sub" id="kMeseMedia">consegne</div></div></div>
 <div class="kpi-row" style="margin-top:-8px"><div class="kpi" style="border-color:rgba(217,119,6,0.3)"><div class="kpi-label" style="color:var(--warning)">🔄 Ritorni mese</div><div class="kpi-val" id="kRitorni" style="color:var(--warning)">0</div></div></div>
@@ -438,7 +442,7 @@ if(!cambio)maybeShowLbIntro();
 try{await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggiRoma(),oraInizio:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast(cambio?'Mezzo aggiornato: '+targaOggi:'Turno iniziato con '+targaOggi);
 if(!cambio)checkProfiloAlert();
-if(!cambio)initPush();
+if(!cambio)maybeShowPushInvito();
 scheduleAutoLogout()}
 
 // Imposta data di oggi nel campo data
@@ -646,6 +650,7 @@ function chiudiLbIntro(){
     document.getElementById('lbIntroView').style.display='none';
     try{localStorage.setItem('lmLbIntro_v2','1')}catch(e){}
     showTab('classifica');
+    maybeShowPushInvito();
 }
 
 function setLeaderboardHtml(html){
@@ -856,6 +861,68 @@ async function initPush(){
         try{localStorage.setItem('lmPushEndpoint',key)}catch(e){}
         showToast('Notifiche attivate 🔔');
     }catch(e){console.warn('push init:',e.message)}
+}
+
+// === INVITO AD ATTIVARE LE NOTIFICHE ===
+// Senza push il driver non riceve classifica serale, podio, esiti ritorni/segnalazioni.
+// Stati: ok | off (permesso mai dato) | denied (bloccate) | ios-install (iPhone: serve
+// l'app sulla schermata Home) | unsupported (browser senza push).
+var IS_IOS=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+var IS_STANDALONE=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
+var pushInvitoMostrato=false;
+async function statoPush(){
+    if(!('Notification' in window)||!('serviceWorker' in navigator)||!('PushManager' in window))return IS_IOS&&!IS_STANDALONE?'ios-install':'unsupported';
+    if(Notification.permission==='denied')return 'denied';
+    if(Notification.permission!=='granted')return 'off';
+    try{var reg=await navigator.serviceWorker.ready;var sub=await reg.pushManager.getSubscription();if(sub){var saved=null;try{saved=localStorage.getItem('lmPushEndpoint')}catch(e){}return saved===sub.endpoint.slice(-32)?'ok':'resave'}}catch(e){}
+    return 'resave';
+}
+function aggiornaBannerPush(st){var b=document.getElementById('pushBanner');if(b)b.style.display=(st==='ok'||st==='unsupported')?'none':'block'}
+async function maybeShowPushInvito(){
+    if(document.getElementById('lbIntroView').style.display==='flex')return;
+    var st=await statoPush();
+    if(st==='resave'){await initPush();st=await statoPush()}
+    aggiornaBannerPush(st);
+    if(st==='ok'||st==='unsupported'||pushInvitoMostrato)return;
+    pushInvitoMostrato=true;
+    mostraInvitoPush(st);
+}
+async function apriInvitoPush(){mostraInvitoPush(await statoPush())}
+function mostraInvitoPush(st){
+    var card=document.getElementById('pushCard'),h='';
+    var perche='<div class="intro-point"><span class="ic">🏆</span><span>Ogni sera ti diciamo <strong>quante consegne hai segnato</strong> e <strong>a che punto sei in classifica</strong>, e ti avvisiamo subito quando <strong>vinci un premio</strong>.</span></div>'+
+        '<div class="intro-point"><span class="ic">🔄</span><span>Ricevi l\'esito dei <strong>ritorni</strong> e delle <strong>segnalazioni</strong> senza dover controllare l\'app.</span></div>';
+    if(st==='ios-install'){
+        h='<div style="text-align:center;font-size:44px;margin-bottom:8px">📱</div><h2>Metti l\'app sulla schermata Home</h2>'+perche+
+          '<div class="intro-point"><span class="ic">1️⃣</span><span>In Safari tocca il tasto <strong>Condividi</strong> (il quadrato con la freccia in su, in basso).</span></div>'+
+          '<div class="intro-point"><span class="ic">2️⃣</span><span>Scegli <strong>«Aggiungi alla schermata Home»</strong> e conferma.</span></div>'+
+          '<div class="intro-point"><span class="ic">3️⃣</span><span>Apri <strong>Last Mile Driver</strong> dall\'icona sulla Home e tocca <strong>Attiva le notifiche</strong>.</span></div>'+
+          '<button class="btn btn-blue" onclick="chiudiInvitoPush()" style="font-size:15px">Ho capito</button>';
+    }else if(st==='denied'){
+        h='<div style="text-align:center;font-size:44px;margin-bottom:8px">🔕</div><h2>Le notifiche sono bloccate</h2>'+perche+
+          '<div class="intro-point"><span class="ic">🤖</span><span><strong>Android:</strong> tocca il lucchetto accanto all\'indirizzo → Autorizzazioni → <strong>Notifiche → Consenti</strong>. Oppure Chrome ⋮ → Impostazioni → Notifiche.</span></div>'+
+          '<div class="intro-point"><span class="ic">🍎</span><span><strong>iPhone:</strong> Impostazioni → Notifiche → <strong>Last Mile Driver</strong> → Consenti notifiche.</span></div>'+
+          '<div class="intro-point"><span class="ic">↩️</span><span>Poi riapri l\'app: le notifiche si attivano da sole.</span></div>'+
+          '<button class="btn btn-blue" onclick="chiudiInvitoPush()" style="font-size:15px">Ho capito</button>';
+    }else{
+        h='<div style="text-align:center;font-size:44px;margin-bottom:8px">🔔</div><h2>Attiva le notifiche</h2>'+perche+
+          '<div class="intro-point"><span class="ic">👉</span><span>Tocca il pulsante e poi <strong>«Consenti»</strong> nella finestra del telefono.</span></div>'+
+          '<button class="btn btn-blue" id="btnAttivaPush" onclick="attivaPush()" style="font-size:15px">🔔 Attiva le notifiche</button>'+
+          '<button class="btn" onclick="chiudiInvitoPush()" style="margin-top:8px;font-size:13px;background:transparent;color:var(--text3)">Più tardi</button>';
+    }
+    card.innerHTML=h;document.getElementById('pushView').style.display='flex';
+}
+function chiudiInvitoPush(){document.getElementById('pushView').style.display='none'}
+async function attivaPush(){
+    setBtn('btnAttivaPush',true,'Attivo...');
+    try{
+        var perm=Notification.permission;
+        if(perm!=='granted')perm=await Notification.requestPermission();
+        if(perm!=='granted'){setBtn('btnAttivaPush',false,'🔔 Attiva le notifiche');mostraInvitoPush(perm==='denied'?'denied':'off');if(perm!=='denied')showToast('Senza «Consenti» le notifiche restano spente');return}
+        await initPush();
+    }catch(e){console.warn('attivaPush:',e.message)}
+    var st=await statoPush();aggiornaBannerPush(st);
+    if(st==='ok'){chiudiInvitoPush()}else{setBtn('btnAttivaPush',false,'🔔 Attiva le notifiche');mostraInvitoPush(st)}
 }
 
 // === PATENTE: verifica AI con foto, alert in scadenza, blocco ===
