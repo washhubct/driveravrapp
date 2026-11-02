@@ -1,0 +1,26 @@
+{
+  "sw.js": {
+    "mtime": 1790092171.0,
+    "seen": 1793656819.435922,
+    "ast_hash": "7f2fc24c8072adaced7c1e74c3ee1a34",
+    "semantic_hash": "7f2fc24c8072adaced7c1e74c3ee1a34"
+  },
+  "BRAIN.md": {
+    "mtime": 1793656434.0840597,
+    "seen": 1793656819.435925,
+    "ast_hash": "1e9316def9e935e3dcba29250e4cb3bb",
+    "semantic_hash": "1e9316def9e935e3dcba29250e4cb3bb"
+  },
+  "README.md": {
+    "mtime": 1790086704.0,
+    "seen": 1793656819.435926,
+    "ast_hash": "ba9a28db59099ae23fafb766141d641b",
+    "semantic_hash": "ba9a28db59099ae23fafb766141d641b"
+  },
+  "index.html": {
+    "mtime": 1793636522.0575616,
+    "seen": 1793656819.4359272,
+    "ast_hash": "5f214bc4382d044e0091a2bbdc74b3a0",
+    "semantic_hash": "5f214bc4382d044e0091a2bbdc74b3a0"
+  }
+}
