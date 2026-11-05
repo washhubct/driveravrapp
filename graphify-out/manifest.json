@@ -22,5 +22,29 @@
     "seen": 1793656819.4359272,
     "ast_hash": "5f214bc4382d044e0091a2bbdc74b3a0",
     "semantic_hash": "5f214bc4382d044e0091a2bbdc74b3a0"
+  },
+  "apple-touch-icon.png": {
+    "mtime": 1790086704.0,
+    "seen": 1793874412.038455,
+    "ast_hash": "dfeae02282372d7e6ad6fe13af28cc0b",
+    "semantic_hash": ""
+  },
+  "assets/icons/icon-192.png": {
+    "mtime": 1790092148.0,
+    "seen": 1793874412.038456,
+    "ast_hash": "25cc438891014d5eb1102cc3d3cae329",
+    "semantic_hash": ""
+  },
+  "assets/icons/icon-512.png": {
+    "mtime": 1790092148.0,
+    "seen": 1793874412.0384572,
+    "ast_hash": "ffbd52adca0c7939e4773608e5c095ca",
+    "semantic_hash": ""
+  },
+  "avr-logo.png": {
+    "mtime": 1790086704.0,
+    "seen": 1793874412.0384572,
+    "ast_hash": "37c2fb56aced06da63f4483a725d8f68",
+    "semantic_hash": ""
   }
 }
