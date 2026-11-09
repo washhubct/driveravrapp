@@ -214,6 +214,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <button class="btn btn-blue" onclick="showTab('nuova')" style="flex:1;font-size:15px">+ Consegne</button>
 <button class="btn" onclick="showTab('ritorno')" style="flex:1;font-size:15px;background:var(--warning);color:#fff;border-color:var(--warning)">🔄 Ritorno</button>
 </div>
+<button class="btn btn-outline" onclick="apriAssenze()" style="margin:-8px 0 20px">🌴 Ferie, permessi e malattia</button>
 <div class="section-title">Report di oggi</div><div id="listaOggi"></div>
 <div class="section-title" style="margin-top:24px">Report recenti</div><div id="listaRecenti"></div>
 <div class="section-title" style="margin-top:24px">🔄 Ritorni recenti</div><div id="listaRitorni"></div>
@@ -327,6 +328,8 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <div class="prof-badges"><span class="prof-badge" id="profCitta">—</span><span class="prof-badge" id="profContratto">—</span></div>
 <div class="targa-display"><span>🚐</span><span class="targa-plate" id="profTarga">—</span><span class="targa-change" onclick="showTargaModal()">cambia</span></div>
 </div>
+<button class="btn btn-outline" onclick="apriAssenze()" style="margin-bottom:12px">🌴 Ferie, permessi e malattia</button>
+<button class="btn btn-outline" id="btnAreaResp" onclick="apriResp()" style="display:none;margin-bottom:20px">👔 Area responsabile</button>
 <div class="section-title">I miei dati personali</div>
 <div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
 <div class="form-group"><label class="form-label">Codice Fiscale</label><input type="text" id="profCF" class="input" placeholder="RSSMRA85M01H501Z" maxlength="16" style="text-transform:uppercase"></div>
@@ -384,6 +387,38 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 </div>
 <div class="section-title" style="margin-top:8px">Le mie segnalazioni recenti</div>
 <div id="listaSegnalazioni"></div>
+</div>
+<div id="tabAssenze" class="screen">
+<div class="section-title">Ferie, permessi e malattia</div>
+<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;box-shadow:var(--shadow)">
+<div class="form-group"><label class="form-label">Cosa vuoi comunicare</label>
+<select id="asTipo" class="input" onchange="asTipoChange()">
+<option value="ferie">🌴 Ferie (da approvare)</option>
+<option value="permesso">🕐 Permesso (da approvare)</option>
+<option value="malattia">🤒 Malattia</option>
+</select></div>
+<div style="display:flex;gap:10px"><div class="form-group" style="flex:1"><label class="form-label">Dal</label><input type="date" id="asDal" class="input"></div>
+<div class="form-group" style="flex:1"><label class="form-label">Al (compreso)</label><input type="date" id="asAl" class="input"></div></div>
+<div class="form-group" id="asProtGroup" style="display:none"><label class="form-label">Numero di protocollo del certificato</label>
+<input type="text" id="asProtocollo" class="input" inputmode="numeric" placeholder="Es. 123456789" maxlength="20">
+<div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.5">Te lo dà il medico quando invia il certificato all'INPS. <strong>Non mandare il certificato né la diagnosi</strong>: all'azienda serve solo il numero.</div></div>
+<div class="form-group"><label class="form-label">Nota (facoltativa)</label>
+<textarea id="asNota" class="input" rows="2" placeholder="Es. permesso solo al mattino" style="resize:vertical"></textarea></div>
+<button id="btnInviaAssenza" class="btn btn-blue" onclick="inviaAssenza()" style="font-size:15px">📨 Invia</button>
+<div id="asInfo" style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.5">Ferie e permessi li approva il responsabile della tua provincia: riceverai una notifica con l'esito.</div>
+</div>
+<div class="section-title">Le mie richieste</div>
+<div id="listaAssenze"></div>
+</div>
+<div id="tabResp" class="screen">
+<div id="respProvince" style="font-size:13px;color:var(--text2);margin-bottom:14px"></div>
+<div class="section-title">Da approvare</div>
+<div id="respDaApprovare"></div>
+<div class="section-title" style="margin-top:24px">Oggi in turno</div>
+<div id="respOggi"></div>
+<div class="section-title" style="margin-top:24px">Malattie e decisioni recenti</div>
+<div id="respRecenti"></div>
+<button class="btn btn-outline" onclick="loadResp()" style="margin-top:12px">↻ Aggiorna</button>
 </div>
 </div>
 <nav class="bottom-nav">
@@ -468,6 +503,7 @@ if(dp.attivo===false){document.getElementById('appView').style.display='none';do
 var boxD=document.createElement('div');boxD.id='disattivatoOverlay';boxD.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
 boxD.innerHTML='<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">⏸️</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Account disattivato</div><div style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:20px">Il tuo accesso all\'app è stato disattivato. Per informazioni contatta:<br><a href="mailto:risorse.umane@last-mile.it" style="color:#2563eb;font-weight:600;text-decoration:none">risorse.umane@last-mile.it</a></div><button onclick="document.getElementById(\'disattivatoOverlay\').remove();doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">← Torna al login</button></div>';
 document.body.appendChild(boxD);return}}else{
+if(await avviaSeResponsabile(email))return;
 // Email non trovata in anagrafica — blocca accesso
 document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';
 var box=document.createElement('div');box.id='noProfileOverlay';box.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
@@ -476,7 +512,7 @@ document.body.appendChild(box);return}
 document.getElementById('driverName').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('driverCity').textContent='Driver — '+cn(dp.citta);document.getElementById('targaHello').textContent='Ciao '+(dp.nome||dp.cognome)+'!';
 document.getElementById('profNome').textContent=dp.cognome+' '+(dp.nome||'');document.getElementById('profEmail').textContent=email;document.getElementById('profCitta').textContent=cn(dp.citta);document.getElementById('profContratto').textContent=dp.contratto||'—';
 initDateLimits();
-await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi();rComp();rProf();aggiornaBannerPatente();avviaIngresso()}
+await loadFl();await loadReports();await loadRitorni();caricaDatiProfilo();rOggi();rComp();rProf();aggiornaBannerPatente();avviaIngresso();loadAssenze();caricaRuoloResponsabile(email)}
 
 async function loadFl(){try{var s=await db.collection('filiali').get();fl=s.docs.map(function(d){return Object.assign({id:d.id},d.data())});var sel=document.getElementById('ncFiliale');sel.innerHTML='<option value="">Seleziona filiale...</option>';var my=fl;if(dp&&dp.citta&&dp.citta!=='??'){var f=fl.filter(function(x){return x.area===dp.citta});if(f.length>0)my=f}my.sort(function(a,b){var na=(a.nome||'').toLowerCase(),nb=(b.nome||'').toLowerCase();return na.localeCompare(nb)});my.forEach(function(f){var o=document.createElement('option');o.value=f.codice;o.textContent=f.nome?f.nome+' ('+f.codice+')':'Filiale '+f.codice;sel.appendChild(o)})}catch(e){console.error('loadFl error:',e);showToast('Impossibile caricare le filiali — verifica la connessione e ricarica la pagina')}}
 
@@ -1114,6 +1150,94 @@ function soloConsulta(){soloConsultaOggi=true;document.getElementById('targaView
 function chiudiTargaModal(){document.getElementById('targaView').style.display='none';if(targaOggi||soloConsultaOggi){document.getElementById('appView').style.display='flex';maybeShowLbIntro()}document.getElementById('btnAnnullaTarga').style.display='none'}
 window.addEventListener('offline',function(){document.getElementById('offlineBanner').style.display='block'});
 window.addEventListener('online',function(){document.getElementById('offlineBanner').style.display='none'});
+
+// === ASSENZE: ferie, permessi, malattia (richiesteAssenza) ===
+// Ferie e permessi li approva il responsabile di provincia; la malattia è una
+// comunicazione con il solo numero di protocollo (mai certificato né diagnosi).
+// Le CF trasformano le richieste attive in causali nelle presenze.
+var assenzeList=[];
+var AS_TIPI={ferie:'🌴 Ferie',permesso:'🕐 Permesso',malattia:'🤒 Malattia'};
+var AS_STATI={in_attesa:['In attesa','#d97706'],approvata:['Approvata','#059669'],rifiutata:['Non approvata','#dc2626'],registrata:['Comunicata','#2563eb'],annullata:['Annullata','#94a3b8']};
+function asPeriodo(r){var it=function(x){return x.slice(8,10)+'/'+x.slice(5,7)+'/'+x.slice(0,4)};return r.dal===r.al?it(r.dal):it(r.dal)+' → '+it(r.al)}
+function asGiorni(r){return Math.round((new Date(r.al+'T12:00:00')-new Date(r.dal+'T12:00:00'))/864e5)+1}
+function asCard(r,opt){opt=opt||{};var st=AS_STATI[r.stato]||[r.stato,'#64748b'],n=asGiorni(r);
+return '<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)">'+
+'<div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><strong>'+(AS_TIPI[r.tipo]||escapeHtml(r.tipo))+'</strong><span style="font-size:12px;font-weight:700;color:'+st[1]+';background:'+st[1]+'1a;padding:3px 10px;border-radius:999px">'+st[0]+'</span></div>'+
+(opt.nome?'<div style="font-size:15px;font-weight:700;margin-top:6px">'+escapeHtml(r.driverNome||r.email)+' <span style="font-weight:400;color:var(--text3);font-size:13px">'+cn(r.citta)+'</span></div>':'')+
+'<div style="font-size:14px;margin-top:6px">'+asPeriodo(r)+' <span style="color:var(--text3)">('+n+(n===1?' giorno':' giorni')+')</span></div>'+
+(r.protocollo?'<div style="font-size:12px;color:var(--text3);margin-top:4px">Protocollo '+escapeHtml(r.protocollo)+'</div>':'')+
+(r.nota?'<div style="font-size:13px;color:var(--text2);margin-top:4px">“'+escapeHtml(r.nota)+'”</div>':'')+
+(r.motivoRifiuto?'<div style="font-size:13px;color:#dc2626;margin-top:4px">Motivo: '+escapeHtml(r.motivoRifiuto)+'</div>':'')+
+(opt.azioni||'')+'</div>'}
+function apriAssenze(){showTab('assenze');var o=oggiRoma();if(!document.getElementById('asDal').value)document.getElementById('asDal').value=o;if(!document.getElementById('asAl').value)document.getElementById('asAl').value=o;asTipoChange();loadAssenze()}
+function asTipoChange(){var m=document.getElementById('asTipo').value==='malattia';document.getElementById('asProtGroup').style.display=m?'block':'none';
+document.getElementById('asInfo').textContent=m?'La malattia vale subito e la vede il responsabile della tua provincia. Se cambiano le date, annullala e inseriscila di nuovo.':'Ferie e permessi li approva il responsabile della tua provincia: riceverai una notifica con l\'esito.'}
+async function loadAssenze(){var em=(auth.currentUser&&auth.currentUser.email||'').toLowerCase();if(!em)return;
+try{var q=await db.collection('richiesteAssenza').where('email','==',em).limit(100).get();assenzeList=q.docs.map(function(d){var x=d.data();x.id=d.id;return x});assenzeList.sort(function(a,b){return b.dal.localeCompare(a.dal)})}catch(e){console.warn('loadAssenze:',errMsg(e))}
+renderAssenze()}
+function renderAssenze(){var box=document.getElementById('listaAssenze');if(!box)return;
+if(!assenzeList.length){box.innerHTML='<div class="empty"><div class="empty-icon">🌴</div>Nessuna richiesta</div>';return}
+box.innerHTML=assenzeList.map(function(r){var annulla=(r.stato==='in_attesa'||r.stato==='registrata')?'<button class="btn btn-outline" style="margin-top:10px;padding:10px;font-size:13px" onclick="annullaAssenza(\''+r.id+'\')">Annulla</button>':'';return asCard(r,{azioni:annulla})}).join('')}
+async function inviaAssenza(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||!dp)return;
+var tipo=document.getElementById('asTipo').value,dal=document.getElementById('asDal').value,al=document.getElementById('asAl').value;
+var prot=document.getElementById('asProtocollo').value.trim(),nota=document.getElementById('asNota').value.trim().slice(0,300);
+if(!dal||!al){showToast('Indica le date');return}
+if(al<dal){showToast('La data di fine è prima di quella di inizio');return}
+if(asGiorni({dal:dal,al:al})>60){showToast('Massimo 60 giorni per richiesta');return}
+if(tipo==='malattia'&&!/^[0-9A-Za-z]{5,20}$/.test(prot)){showToast('Inserisci il numero di protocollo del certificato');return}
+if(tipo!=='malattia'&&dal<oggiRoma()&&!confirm('La data di inizio è già passata. Vuoi inviare comunque la richiesta?'))return;
+submitting=true;setBtn('btnInviaAssenza',true,'Invio...');
+try{var rec={email:(auth.currentUser.email||'').toLowerCase(),driver:(dp.cognome||'').toUpperCase(),driverNome:((dp.cognome||'').toUpperCase()+' '+(dp.nome||'')).trim(),citta:dp.citta||'',tipo:tipo,dal:dal,al:al,nota:nota,stato:tipo==='malattia'?'registrata':'in_attesa',creataIl:firebase.firestore.FieldValue.serverTimestamp()};
+if(tipo==='malattia')rec.protocollo=prot;
+await db.collection('richiesteAssenza').add(rec);
+showToast(tipo==='malattia'?'Malattia comunicata. Rimettiti presto!':'Richiesta inviata al responsabile');
+document.getElementById('asNota').value='';document.getElementById('asProtocollo').value='';await loadAssenze()}
+catch(e){showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnInviaAssenza',false,'📨 Invia')}}
+async function annullaAssenza(id){if(!confirm('Annullare questa richiesta?'))return;
+try{await db.collection('richiesteAssenza').doc(id).update({stato:'annullata',annullataIl:firebase.firestore.FieldValue.serverTimestamp()});showToast('Richiesta annullata');await loadAssenze()}catch(e){showToast('Errore: '+errMsg(e))}}
+
+// === AREA RESPONSABILE ===
+// Responsabili di provincia (utenti/{email}.mansione=='responsabile'): approvano
+// ferie e permessi e vedono chi è in turno oggi, solo nelle loro province.
+// Chi non è in anagrafica driver entra direttamente qui: niente targa né classifica.
+var respProfilo=null,respRichieste=[];
+var RESP_CAUSALI={ferie:'🌴 ferie',malattia:'🤒 malattia',permesso:'🕐 permesso',riposo:'riposo',assente:'assente',non_lavorato:'non lavora'};
+async function leggiProfiloResponsabile(email){try{var d=await db.collection('utenti').doc(email.toLowerCase()).get();if(!d.exists)return null;var u=d.data();
+if(u.mansione!=='responsabile'||u.attivo===false)return null;u.province=(u.province||[]).map(function(p){return String(p).toUpperCase()});return u.province.length?u:null}catch(e){console.warn('profilo responsabile:',errMsg(e));return null}}
+async function caricaRuoloResponsabile(email){respProfilo=await leggiProfiloResponsabile(email);var b=document.getElementById('btnAreaResp');if(b)b.style.display=respProfilo?'block':'none'}
+async function avviaSeResponsabile(email){respProfilo=await leggiProfiloResponsabile(email);if(!respProfilo)return false;
+dp={cognome:respProfilo.nome||email.split('@')[0],nome:'',citta:'',responsabile:true};
+document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';
+document.querySelector('.bottom-nav').style.display='none';
+document.getElementById('driverName').textContent=dp.cognome;document.getElementById('driverCity').textContent='Responsabile — '+respProfilo.province.map(cn).join(', ');
+apriResp();maybeShowPushInvito();return true}
+function apriResp(){showTab('resp');loadResp()}
+async function loadResp(){if(!respProfilo)return;var prov=respProfilo.province,oggi=oggiRoma();
+document.getElementById('respProvince').textContent='Province: '+prov.map(cn).join(', ');
+try{var res=await Promise.all([
+Promise.all(prov.map(function(p){return db.collection('richiesteAssenza').where('citta','==',p).get()})),
+Promise.all(prov.map(function(p){return db.collection('driverAnagrafica').where('citta','==',p).get()})),
+Promise.all(prov.map(function(p){return db.collection('presenzeDriver').where('citta','==',p).where('data','==',oggi).get()}))]);
+respRichieste=[];res[0].forEach(function(q){q.forEach(function(d){var x=d.data();x.id=d.id;respRichieste.push(x)})});
+var attivi=[];res[1].forEach(function(q){q.forEach(function(d){var x=d.data();if(x.attivo!==false&&x.email)attivi.push(x)})});
+var pres={};res[2].forEach(function(q){q.forEach(function(d){var x=d.data();pres[x.email]=x})});
+renderResp(attivi,pres)}catch(e){console.warn('loadResp:',errMsg(e));showToast('Errore caricamento: '+errMsg(e))}}
+function renderResp(attivi,pres){
+var pend=respRichieste.filter(function(r){return r.stato==='in_attesa'}).sort(function(a,b){return a.dal.localeCompare(b.dal)});
+document.getElementById('respDaApprovare').innerHTML=pend.length?pend.map(function(r){return asCard(r,{nome:true,azioni:'<div style="display:flex;gap:8px;margin-top:10px"><button class="btn btn-success" style="flex:1;padding:10px;font-size:14px" onclick="decidiRichiesta(\''+r.id+'\',\'approvata\')">✓ Approva</button><button class="btn btn-outline" style="flex:1;padding:10px;font-size:14px;color:#dc2626;border-color:#dc2626" onclick="decidiRichiesta(\''+r.id+'\',\'rifiutata\')">✕ Rifiuta</button></div>'})}).join(''):'<div class="empty"><div class="empty-icon">✅</div>Niente da approvare</div>';
+var inTurno=[],giust=[],mancano=[];
+attivi.sort(function(a,b){return(a.cognome||'').localeCompare(b.cognome||'')}).forEach(function(a){var p=pres[(a.email||'').toLowerCase()],nome=(a.cognome||'')+' '+(a.nome||'');
+if(p&&p.causale&&p.causale!=='presente')giust.push(nome+' ('+(RESP_CAUSALI[p.causale]||p.causale)+')');else if(p&&(p.presenteApp||p.causale==='presente'))inTurno.push(nome+(p.primoAccesso?' · '+p.primoAccesso:''));else mancano.push(nome)});
+var riga=function(t,l,c){return l.length?'<div style="margin-bottom:10px"><div style="font-size:12px;font-weight:700;color:'+c+';text-transform:uppercase;letter-spacing:.5px">'+t+' ('+l.length+')</div><div style="font-size:14px;line-height:1.7">'+l.map(escapeHtml).join('<br>')+'</div></div>':''};
+document.getElementById('respOggi').innerHTML='<div style="background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 16px;box-shadow:var(--shadow)">'+
+'<div style="font-size:15px;font-weight:700;margin-bottom:10px">'+inTurno.length+' su '+attivi.length+' hanno aperto il turno</div>'+
+riga('In turno',inTurno,'#059669')+riga('Assenze giustificate',giust,'#2563eb')+riga('Non ancora',mancano,'#d97706')+'</div>';
+var rec=respRichieste.filter(function(r){return r.stato==='registrata'||r.stato==='approvata'||r.stato==='rifiutata'}).sort(function(a,b){return b.dal.localeCompare(a.dal)}).slice(0,15);
+document.getElementById('respRecenti').innerHTML=rec.length?rec.map(function(r){return asCard(r,{nome:true})}).join(''):'<div class="empty">Nessuna</div>'}
+async function decidiRichiesta(id,stato){var upd={stato:stato,decisaDa:(auth.currentUser.email||'').toLowerCase(),decisaIl:firebase.firestore.FieldValue.serverTimestamp()};
+if(stato==='rifiutata'){var m=prompt('Motivo del rifiuto (lo vedrà il driver):','');if(m===null)return;upd.motivoRifiuto=m.trim().slice(0,200)}
+else if(!confirm('Approvare la richiesta?'))return;
+try{await db.collection('richiesteAssenza').doc(id).update(upd);showToast(stato==='approvata'?'Approvata: il driver riceve la notifica':'Rifiutata: il driver riceve la notifica');await loadResp()}catch(e){showToast('Errore: '+errMsg(e))}}
 
 // === RITORNI ===
 var ritorniList=[];
