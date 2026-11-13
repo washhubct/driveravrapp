@@ -403,7 +403,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <input type="text" id="asProtocollo" class="input" inputmode="numeric" placeholder="Es. 123456789" maxlength="20">
 <div style="font-size:12px;color:var(--text3);margin-top:6px;line-height:1.5">Te lo dà il medico quando invia il certificato all'INPS. <strong>Non mandare il certificato né la diagnosi</strong>: all'azienda serve solo il numero.</div></div>
 <div class="form-group"><label class="form-label">Nota (facoltativa)</label>
-<textarea id="asNota" class="input" rows="2" placeholder="Es. permesso solo al mattino" style="resize:vertical"></textarea></div>
+<textarea id="asNota" class="input" rows="2" placeholder="Es. permesso solo al mattino" maxlength="80" style="resize:vertical"></textarea></div>
 <button id="btnInviaAssenza" class="btn btn-blue" onclick="inviaAssenza()" style="font-size:15px">📨 Invia</button>
 <div id="asInfo" style="font-size:12px;color:var(--text3);margin-top:10px;line-height:1.5">Ferie e permessi li approva il responsabile della tua provincia: riceverai una notifica con l'esito.</div>
 </div>
@@ -1180,7 +1180,7 @@ if(!assenzeList.length){box.innerHTML='<div class="empty"><div class="empty-icon
 box.innerHTML=assenzeList.map(function(r){var annulla=(r.stato==='in_attesa'||r.stato==='registrata')?'<button class="btn btn-outline" style="margin-top:10px;padding:10px;font-size:13px" onclick="annullaAssenza(\''+r.id+'\')">Annulla</button>':'';return asCard(r,{azioni:annulla})}).join('')}
 async function inviaAssenza(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||!dp)return;
 var tipo=document.getElementById('asTipo').value,dal=document.getElementById('asDal').value,al=document.getElementById('asAl').value;
-var prot=document.getElementById('asProtocollo').value.trim(),nota=document.getElementById('asNota').value.trim().slice(0,300);
+var prot=document.getElementById('asProtocollo').value.trim(),nota=document.getElementById('asNota').value.trim().slice(0,80);
 if(!dal||!al){showToast('Indica le date');return}
 if(al<dal){showToast('La data di fine è prima di quella di inizio');return}
 if(asGiorni({dal:dal,al:al})>60){showToast('Massimo 60 giorni per richiesta');return}
