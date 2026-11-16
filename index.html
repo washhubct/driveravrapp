@@ -444,7 +444,7 @@ select.input{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xml
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script>
 firebase.initializeApp({apiKey:"AIzaSyCleejDdWN6w41TcBw4fvyAPr_6rxU8Bgs",authDomain:"avr-logistic-dashboard.firebaseapp.com",projectId:"avr-logistic-dashboard",storageBucket:"avr-logistic-dashboard.firebasestorage.app",messagingSenderId:"323721042739",appId:"1:323721042739:web:a9fa1710eeb8cfe3357c46"});
-var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],cc=3.50,fl=[],targaOggi='',submitting=false,turnoConfermato=false,soloConsultaOggi=false,loggingAccesso=false;
+var auth=firebase.auth(),db=firebase.firestore(),dp=null,reports=[],fl=[],targaOggi='',busy={},turnoConfermato=false,soloConsultaOggi=false,loggingAccesso=false;
 
 function doLogin(){var e=document.getElementById('loginEmail').value.trim(),p=document.getElementById('loginPw').value;document.getElementById('loginErr').textContent='';if(!e||!p){document.getElementById('loginErr').textContent='Inserisci email e password';return}auth.signInWithEmailAndPassword(e,p).catch(function(r){var m='Errore di accesso';if(r.code==='auth/user-not-found'||r.code==='auth/wrong-password'||r.code==='auth/invalid-credential')m='Email o password non validi';if(r.code==='auth/too-many-requests')m='Troppi tentativi';document.getElementById('loginErr').textContent=m})}
 function showReset(){document.getElementById('loginMain').classList.add('hidden');document.getElementById('resetWrap').classList.add('active');document.getElementById('resetEmail').value=document.getElementById('loginEmail').value}
@@ -452,8 +452,12 @@ function hideReset(){document.getElementById('loginMain').classList.remove('hidd
 async function doReset(){var e=document.getElementById('resetEmail').value.trim(),m=document.getElementById('resetMsg'),btn=document.querySelector('#resetWrap .btn-blue');if(!e){m.style.color='#dc2626';m.textContent='Inserisci la tua email';return}if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)){m.style.color='#dc2626';m.textContent='Email non valida';return}btn.disabled=true;btn.textContent='Invio in corso...';m.textContent='';try{await fetch('https://europe-west1-avr-logistic-dashboard.cloudfunctions.net/requestPasswordReset',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e})});m.style.color='#16a34a';m.textContent='Se l\'email è registrata, riceverai il link a breve.'}catch(err){m.style.color='#dc2626';m.textContent='Errore di rete — riprova più tardi'}finally{btn.disabled=false;btn.textContent='Invia link di reset'}}
 function doLogout(){targaOggi='';auth.signOut()}
 // Log accesso driver su Firestore (visibile in Dashboard > Log Accessi)
-async function logAccessoDriver(user){if(loggingAccesso)return;loggingAccesso=true;try{var ua=navigator.userAgent||'';await db.collection('driverAccessLog').add({email:user.email,uid:user.uid,ruolo:'driver',piattaforma:'app-driver',dispositivo:/Mobile|Android|iPhone|iPad/i.test(ua)?'Mobile':'Desktop',browser:ua.length>120?ua.substring(0,120):ua,timestamp:firebase.firestore.FieldValue.serverTimestamp(),data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})})}catch(e){console.warn('Errore log accesso:',e.message)}finally{loggingAccesso=false}}
-auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';logAccessoDriver(u);init(u.email)}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
+async function logAccessoDriver(user){if(loggingAccesso||!user)return;loggingAccesso=true;try{var ua=navigator.userAgent||'',em=(user.email||'').toLowerCase();await db.collection('driverAccessLog').add({email:em,uid:user.uid,ruolo:respProfilo?'responsabile':'driver',piattaforma:'app-driver',dispositivo:/Mobile|Android|iPhone|iPad/i.test(ua)?'Mobile':'Desktop',browser:ua.length>120?ua.substring(0,120):ua,timestamp:firebase.firestore.FieldValue.serverTimestamp(),data:new Date().toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'})});try{localStorage.setItem('lmLogGiorno',em+'|'+oggiRoma())}catch(e2){}}catch(e){console.warn('Errore log accesso:',e.message)}finally{loggingAccesso=false}}
+// App ripresa dal background (PWA o tab lasciati aperti): senza ricaricare la pagina
+// non passa da onAuthStateChanged, quindi chi la tiene aperta non comparirebbe nei log.
+// Al rientro registra un accesso se oggi non ce n'è ancora uno per questo utente.
+document.addEventListener('visibilitychange',function(){if(document.visibilityState!=='visible'||!auth.currentUser)return;var em=(auth.currentUser.email||'').toLowerCase(),k='';try{k=localStorage.getItem('lmLogGiorno')||''}catch(e){}if(k!==em+'|'+oggiRoma())logAccessoDriver(auth.currentUser)});
+auth.onAuthStateChanged(function(u){if(u){document.getElementById('loginView').style.display='none';Promise.resolve(init(u.email)).catch(function(){}).then(function(){logAccessoDriver(u)})}else{document.getElementById('loginView').style.display='flex';document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';dp=null}});
 document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin()});
 
 function showTargaModal(){document.getElementById('targaView').style.display='flex';document.getElementById('targaInput').value=targaOggi;document.getElementById('btnAnnullaTarga').style.display=(turnoConfermato||soloConsultaOggi)?'block':'none';document.getElementById('btnNonLavoro').style.display=(targaOggi||soloConsultaOggi)?'none':'block';document.getElementById('targaInput').focus()}
@@ -466,16 +470,16 @@ var now=new Date();var logout1am=new Date(now.getFullYear(),now.getMonth(),now.g
 if(logout1am<=now)logout1am.setDate(logout1am.getDate()+1);
 autoLogoutTimer=setTimeout(function(){targaOggi='';auth.signOut();location.reload()},logout1am-now)}
 
-async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting)return;
+async function confermaTarga(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(busy.targa)return;
 var t=document.getElementById('targaInput').value.trim().toUpperCase();
 if(!t||t.length<5){showToast('Inserisci una targa valida');return}
 if(!dp){showToast('Profilo non caricato. Ricarica la pagina.');return}
 var cambio=turnoConfermato;
 if(cambio&&t===targaOggi){chiudiTargaModal();return}
-submitting=true;setBtn('btnTarga',true,cambio?'Aggiorno...':'Avvio turno...');
+busy.targa=true;setBtn('btnTarga',true,cambio?'Aggiorno...':'Avvio turno...');
 targaOggi=t;document.getElementById('targaView').style.display='none';document.getElementById('appView').style.display='flex';document.getElementById('profTarga').textContent=targaOggi;
 if(!cambio)maybeShowLbIntro();
-try{await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggiRoma(),oraInizio:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{submitting=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
+try{await db.collection('turniDriver').add({driver:(dp.cognome||'').toUpperCase(),driverNome:(dp.cognome||'')+' '+(dp.nome||''),email:(auth.currentUser.email||'').toLowerCase(),targa:t,citta:dp.citta||'??',data:oggiRoma(),oraInizio:new Date().toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),timestamp:firebase.firestore.FieldValue.serverTimestamp()});turnoConfermato=true}catch(e){console.warn('Errore salvataggio turno:',errMsg(e))}finally{busy.targa=false;setBtn('btnTarga',false,'Inizia il turno →');document.getElementById('btnAnnullaTarga').style.display='none'}
 showToast(cambio?'Mezzo aggiornato: '+targaOggi:'Turno iniziato con '+targaOggi);
 if(!cambio)checkProfiloAlert();
 if(!cambio)maybeShowPushInvito();
@@ -498,7 +502,7 @@ var box=document.createElement('div');box.id='connBlockedOverlay';box.style.cssT
 box.innerHTML='<div style="background:#fff;border-radius:20px;padding:32px 26px;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:44px;text-align:center;margin-bottom:10px">📡</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;text-align:center;margin-bottom:8px">Connessione ai dati bloccata</div><div style="font-size:13px;color:#64748b;line-height:1.7;margin-bottom:14px">Il login funziona ma il tuo browser sta bloccando il caricamento dei dati. Succede con alcuni browser (es. Samsung Internet) o con il blocco contenuti attivo. Prova cos\u00ec:</div><ol style="font-size:13px;color:#334155;line-height:1.8;margin:0 0 16px 18px"><li><strong>Apri l\u2019app da Chrome</strong> (non dal browser Samsung) e reinstalla l\u2019icona da l\u00ec</li><li>Oppure disattiva <strong>blocco contenuti / risparmio dati</strong> nelle impostazioni del browser</li><li>Oppure cancella i <strong>dati di navigazione</strong> di questo sito e riprova</li></ol><button onclick="location.reload()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">\ud83d\udd04 Riprova</button><div style="font-size:12px;color:#94a3b8;text-align:center;margin-top:12px">Se non risolvi: <a href="mailto:risorse.umane@last-mile.it" style="color:#2563eb">risorse.umane@last-mile.it</a></div></div>';
 document.body.appendChild(box)}
 async function init(email){var s;try{s=await Promise.race([db.collection('driverAnagrafica').where('email','==',email.toLowerCase()).get(),new Promise(function(_,rej){setTimeout(function(){rej(new Error('timeout dati (12s)'))},12000)})])}catch(e){console.error('init error:',e);showConnBlocked();return}
-var cb=document.getElementById('connBlockedOverlay');if(cb)cb.remove();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;cc=dp.costoConsegna||3.50;
+var cb=document.getElementById('connBlockedOverlay');if(cb)cb.remove();if(!s.empty){dp=s.docs[0].data();dp.id=s.docs[0].id;
 if(dp.attivo===false){document.getElementById('appView').style.display='none';document.getElementById('targaView').style.display='none';
 var boxD=document.createElement('div');boxD.id='disattivatoOverlay';boxD.style.cssText='position:fixed;inset:0;background:rgba(15,29,61,0.95);z-index:300;display:flex;align-items:center;justify-content:center;padding:24px';
 boxD.innerHTML='<div style="background:#fff;border-radius:20px;padding:36px 28px;max-width:360px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.3)"><div style="font-size:48px;margin-bottom:12px">⏸️</div><div style="font-size:18px;font-weight:800;color:#0f1d3d;margin-bottom:8px">Account disattivato</div><div style="font-size:14px;color:#64748b;line-height:1.7;margin-bottom:20px">Il tuo accesso all\'app è stato disattivato. Per informazioni contatta:<br><a href="mailto:risorse.umane@last-mile.it" style="color:#2563eb;font-weight:600;text-decoration:none">risorse.umane@last-mile.it</a></div><button onclick="document.getElementById(\'disattivatoOverlay\').remove();doLogout()" style="width:100%;padding:14px;background:#0f1d3d;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--font)">← Torna al login</button></div>';
@@ -522,17 +526,17 @@ try{var s=await db.collection('reportDriver').where('driverEmail','==',em).order
 
 function rOggi(){var oggi=oggiRoma();var ms=oggi.substring(0,7);
 var consOggi=0,consMese=0,ritorniMese=0;
-reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
-ritorniList.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.toISOString().slice(0,7);if(m===ms)ritorniMese+=(r.numRitorni||0)});
-var giorniMese={};reports.forEach(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);if(d.substring(0,7)===ms&&(r.numConsegne||0)>0)giorniMese[d]=true});
+reports.forEach(function(r){var d=dataYMD(r.data);var m=d.substring(0,7);if(d===oggi)consOggi+=(r.numConsegne||0);if(m===ms)consMese+=(r.numConsegne||0)});
+ritorniList.forEach(function(r){var m=dataYMD(r.data).substring(0,7);if(m===ms)ritorniMese+=(r.numRitorni||0)});
+var giorniMese={};reports.forEach(function(r){var d=dataYMD(r.data);if(d.substring(0,7)===ms&&(r.numConsegne||0)>0)giorniMese[d]=true});
 var nGiorni=Object.keys(giorniMese).length;
 document.getElementById('kOggi').textContent=consOggi;document.getElementById('kMese').textContent=consMese;document.getElementById('kMeseMedia').textContent=nGiorni>0?'~'+Math.round(consMese/nGiorni)+'/giorno':'consegne';
 document.getElementById('kRitorni').textContent=ritorniMese;
-var todayReports=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d===oggi});
+var todayReports=reports.filter(function(r){var d=dataYMD(r.data);return d===oggi});
 var el=document.getElementById('listaOggi');
 if(!todayReports.length){el.innerHTML='<div class="empty"><div class="empty-icon">📭</div><p>Nessun report per oggi</p><p style="font-size:12px;margin-top:4px">Premi "+ Registra consegne" per iniziare</p></div>'}
 else{el.innerHTML=todayReports.map(function(r){return reportCard(r)}).join('')}
-var recenti=reports.filter(function(r){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);return d!==oggi}).slice(0,20);
+var recenti=reports.filter(function(r){var d=dataYMD(r.data);return d!==oggi}).slice(0,20);
 var el2=document.getElementById('listaRecenti');
 if(!recenti.length){el2.innerHTML='<div class="empty"><div class="empty-icon">📋</div><p>Nessun report precedente</p></div>'}
 else{var lastDate='',h='';recenti.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var ds=d.toLocaleDateString('it-IT',{weekday:'short',day:'numeric',month:'short'});if(ds!==lastDate){h+='<div class="date-label">'+ds+'</div>';lastDate=ds}h+=reportCard(r)});el2.innerHTML=h}
@@ -546,12 +550,12 @@ function reportCard(r){var filialeNome=getFilialeNome(r.filiale);var h='<div cla
 
 function getFilialeNome(codice){if(!codice)return 'Filiale ?';var f=fl.find(function(x){return String(x.codice)===String(codice)});return f&&f.nome?f.nome+' ('+codice+')':'Filiale '+codice}
 
-async function eliminaReport(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo report?'))return;submitting=true;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{submitting=false}}
+async function eliminaReport(id){if(!auth.currentUser)return;if(busy.eliminaReport)return;if(!confirm('Vuoi eliminare questo report?'))return;busy.eliminaReport=true;try{await db.collection('reportDriver').doc(id).delete();showToast('Report eliminato');await loadReports();rOggi();rComp()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{busy.eliminaReport=false}}
 
-async function eliminaRitorno(id){if(!auth.currentUser)return;if(submitting)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;submitting=true;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{submitting=false}}
+async function eliminaRitorno(id){if(!auth.currentUser)return;if(busy.eliminaRitorno)return;if(!confirm('Vuoi eliminare questo ritorno?'))return;busy.eliminaRitorno=true;try{await db.collection('ritorni').doc(id).delete();showToast('Ritorno eliminato');await loadRitorni();rOggi()}catch(e){showToast('Impossibile eliminare — riprova: '+errMsg(e))}finally{busy.eliminaRitorno=false}}
 
-function rComp(){var mesi={};reports.forEach(function(r){var d=r.data instanceof Date?r.data:new Date(r.data);var m=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');if(!mesi[m])mesi[m]={count:0,giorni:{}};mesi[m].count+=(r.numConsegne||0);if((r.numConsegne||0)>0)mesi[m].giorni[d.toISOString().slice(0,10)]=true});
-var now=new Date();var mcur=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+function rComp(){var mesi={};reports.forEach(function(r){var d=dataYMD(r.data);var m=d.substring(0,7);if(!mesi[m])mesi[m]={count:0,giorni:{}};mesi[m].count+=(r.numConsegne||0);if((r.numConsegne||0)>0)mesi[m].giorni[d]=true});
+var mcur=meseCorrenteRoma();
 if(!mesi[mcur])mesi[mcur]={count:0,giorni:{}};
 var sorted=Object.entries(mesi).sort(function(a,b){return b[0].localeCompare(a[0])});
 var ccur=mesi[mcur].count||0,gcur=Object.keys(mesi[mcur].giorni).length;
@@ -560,11 +564,11 @@ var el=document.getElementById('listaCompensi'),mn=['Gennaio','Febbraio','Marzo'
 if(!sorted.length){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div><p>Nessuna consegna</p></div>';return}
 el.innerHTML=sorted.map(function(e){var p=e[0].split('-'),l=mn[parseInt(p[1])-1]+' '+p[0],g=Object.keys(e[1].giorni).length;return'<div class="comp-row"><div><div class="comp-mese">'+l+'</div><div class="comp-cnt">'+g+' giorni attivi</div></div><div class="comp-val">'+e[1].count+' consegne</div></div>'}).join('')}
 
-function rProf(){var tot=0,giorni={};reports.forEach(function(r){tot+=(r.numConsegne||0);if((r.numConsegne||0)>0){var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);giorni[d]=true}});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent=Object.keys(giorni).length;document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
+function rProf(){var tot=0,giorni={};reports.forEach(function(r){tot+=(r.numConsegne||0);if((r.numConsegne||0)>0){var d=dataYMD(r.data);giorni[d]=true}});document.getElementById('profTotC').textContent=tot;document.getElementById('profTotG').textContent=Object.keys(giorni).length;document.getElementById('profTarga').textContent=targaOggi||'—';loadLeaderboard()}
 
 async function salvaReport(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
-    if(submitting)return;
+    if(busy.report)return;
     var dataStr=document.getElementById('ncData').value;
     var fil=document.getElementById('ncFiliale').value;
     var fas=document.getElementById('ncFascia').value;
@@ -600,7 +604,7 @@ async function salvaReport(){
     var dup=reports.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===fil&&r.fascia===fas});
     if(dup){showToast('Hai già inserito questa fascia per la data selezionata');return}
 
-    submitting=true;setBtn('btnSalvaReport',true,'Salvataggio...');
+    busy.report=true;setBtn('btnSalvaReport',true,'Salvataggio...');
     var fd=fl.find(function(f){return String(f.codice)===fil});
     var filialeNome=fd&&fd.nome?fd.nome:'';
 
@@ -629,7 +633,7 @@ async function salvaReport(){
     document.getElementById('successDetail').textContent=num+' consegne · '+(filialeNome||'Filiale '+fil)+' · '+fas+' · '+dataLabel;
     document.getElementById('formNuova').style.display='none';document.getElementById('successMsg').style.display='block';
     await loadReports();rOggi();rComp()
-    }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaReport',false,'✓ Conferma consegne')}
+    }catch(e){console.error('salvaReport error:',e);showToast('Errore: '+errMsg(e))}finally{busy.report=false;setBtn('btnSalvaReport',false,'✓ Conferma consegne')}
 }
 
 function resetNuova(){document.getElementById('ncNumero').value='';document.getElementById('ncNote').value='';document.getElementById('ncOraInizio').value='';document.getElementById('ncOraFine').value='';document.getElementById('successMsg').style.display='none';document.getElementById('formNuova').style.display='block';initDateLimits();prefillOraInizio()}
@@ -669,6 +673,15 @@ function meseCorrenteRoma(){
 // mezzanotte e le 2 slitterebbe al giorno precedente).
 function oggiRoma(){
     return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+}
+// Data di un record (Date, Timestamp o stringa) come YYYY-MM-DD in TZ Europe/Rome:
+// stesso riferimento di oggiRoma(), mai toISOString() (UTC).
+function dataYMD(v){
+    if(!v)return '';
+    if(typeof v==='string'&&/^\d{4}-\d{2}-\d{2}/.test(v))return v.substring(0,10);
+    var d=v instanceof Date?v:(v.toDate?v.toDate():new Date(v));
+    if(isNaN(d))return '';
+    return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Rome',year:'numeric',month:'2-digit',day:'2-digit'}).format(d);
 }
 
 function renderTrendMobile(posPrec,posCorrente){
@@ -750,7 +763,7 @@ async function loadLeaderboard(){
             // Empty state motivante: distinguiamo "primo del mese / nessun report ancora"
             // dal "tu non hai ancora consegne" (basato su reports caricati)
             var hasMyReports=reports.some(function(r){
-                var d=r.data instanceof Date?r.data.toISOString().slice(0,7):(r.data||'').substring(0,7);
+                var d=dataYMD(r.data).substring(0,7);
                 return d===meseCorrente;
             });
             var msg=hasMyReports
@@ -829,7 +842,7 @@ function showMotivational(){
     var oggi=oggiRoma();
     var consOggi=0,consMese=0;
     reports.forEach(function(r){
-        var d=r.data instanceof Date?r.data.toISOString().slice(0,10):(r.data||'').substring(0,10);
+        var d=dataYMD(r.data);
         if(d===oggi)consOggi+=(r.numConsegne||0);
         var m=d.substring(0,7);
         var ms=oggi.substring(0,7);
@@ -1043,7 +1056,7 @@ async function scegliFotoPatente(lato,input){
 async function verificaPatenteFoto(){
     if(!auth.currentUser||!dp||!dp.id){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(!patFoto.fronte||!patFoto.retro){showToast('Servono entrambe le foto: fronte e retro');return}
-    if(submitting)return;submitting=true;
+    if(busy.patente)return;busy.patente=true;
     var esito=document.getElementById('patenteEsito');
     setBtn('btnPatenteVerifica',true,'');document.getElementById('btnPatenteVerifica').textContent='⏳ Carico le foto...';esito.innerHTML='';
     try{
@@ -1070,7 +1083,7 @@ async function verificaPatenteFoto(){
     }catch(e){
         var hint=e&&e.ritenta===false?'Non serve riprovare adesso: le foto restano salvate, ti avvisiamo noi quando la verifica è di nuovo attiva.':'Controlla la connessione e tocca di nuovo <strong>Verifica patente</strong>: le foto sono salvate, non serve rifarle.';
         esito.innerHTML='<div class="pat-esito-ko"><div class="t">⚠️ Qualcosa non ha funzionato</div>'+escapeHtml(errMsg(e))+'<div style="margin-top:6px;font-size:12px">'+hint+'</div></div>';
-    }finally{submitting=false;aggiornaBtnPatente()}
+    }finally{busy.patente=false;aggiornaBtnPatente()}
 }
 // Banner giallo in tab Oggi: in scadenza (≤30 gg) oppure verifica foto da fare entro la data limite
 function aggiornaBannerPatente(){
@@ -1116,15 +1129,15 @@ function caricaDatiProfilo(){
 async function salvaProfilo(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
     if(!dp||!dp.id){showToast('Errore: profilo non trovato');return}
-    if(submitting)return;
-    submitting=true;setBtn('btnSalvaProfilo',true,'Salvataggio...');
+    if(busy.profilo)return;
+    busy.profilo=true;setBtn('btnSalvaProfilo',true,'Salvataggio...');
     var cf=document.getElementById('profCF').value.trim().toUpperCase();
     var tel=document.getElementById('profTelefono').value.trim();
     var nascita=document.getElementById('profDataNascita').value;
     var indirizzo=document.getElementById('profIndirizzo').value.trim();
 
-    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
-    if(!tel){showToast('Inserisci il numero di telefono');submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
+    if(!cf||cf.length!==16){showToast('Codice fiscale non valido (16 caratteri)');busy.profilo=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
+    if(!tel){showToast('Inserisci il numero di telefono');busy.profilo=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali');return}
 
     try{
         await db.collection('driverAnagrafica').doc(dp.id).update({
@@ -1138,7 +1151,7 @@ async function salvaProfilo(){
         dp.telefono=tel;dp.dataNascita=nascita;dp.indirizzo=indirizzo;
         aggiornaBannerPatente();
         showToast('Dati salvati con successo!');
-    }catch(e){showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali')}
+    }catch(e){showToast('Errore: '+errMsg(e))}finally{busy.profilo=false;setBtn('btnSalvaProfilo',false,'💾 Salva dati personali')}
 }
 
 function escapeHtml(t){if(!t)return '';return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;')}
@@ -1178,7 +1191,7 @@ renderAssenze()}
 function renderAssenze(){var box=document.getElementById('listaAssenze');if(!box)return;
 if(!assenzeList.length){box.innerHTML='<div class="empty"><div class="empty-icon">🌴</div>Nessuna richiesta</div>';return}
 box.innerHTML=assenzeList.map(function(r){var annulla=(r.stato==='in_attesa'||r.stato==='registrata')?'<button class="btn btn-outline" style="margin-top:10px;padding:10px;font-size:13px" onclick="annullaAssenza(\''+r.id+'\')">Annulla</button>':'';return asCard(r,{azioni:annulla})}).join('')}
-async function inviaAssenza(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(submitting||!dp)return;
+async function inviaAssenza(){if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}if(busy.assenza||!dp)return;
 var tipo=document.getElementById('asTipo').value,dal=document.getElementById('asDal').value,al=document.getElementById('asAl').value;
 var prot=document.getElementById('asProtocollo').value.trim(),nota=document.getElementById('asNota').value.trim().slice(0,80);
 if(!dal||!al){showToast('Indica le date');return}
@@ -1186,13 +1199,13 @@ if(al<dal){showToast('La data di fine è prima di quella di inizio');return}
 if(asGiorni({dal:dal,al:al})>60){showToast('Massimo 60 giorni per richiesta');return}
 if(tipo==='malattia'&&!/^[0-9A-Za-z]{5,20}$/.test(prot)){showToast('Inserisci il numero di protocollo del certificato');return}
 if(tipo!=='malattia'&&dal<oggiRoma()&&!confirm('La data di inizio è già passata. Vuoi inviare comunque la richiesta?'))return;
-submitting=true;setBtn('btnInviaAssenza',true,'Invio...');
+busy.assenza=true;setBtn('btnInviaAssenza',true,'Invio...');
 try{var rec={email:(auth.currentUser.email||'').toLowerCase(),driver:(dp.cognome||'').toUpperCase(),driverNome:((dp.cognome||'').toUpperCase()+' '+(dp.nome||'')).trim(),citta:dp.citta||'',tipo:tipo,dal:dal,al:al,nota:nota,stato:tipo==='malattia'?'registrata':'in_attesa',creataIl:firebase.firestore.FieldValue.serverTimestamp()};
 if(tipo==='malattia')rec.protocollo=prot;
 await db.collection('richiesteAssenza').add(rec);
 showToast(tipo==='malattia'?'Malattia comunicata. Rimettiti presto!':'Richiesta inviata al responsabile');
 document.getElementById('asNota').value='';document.getElementById('asProtocollo').value='';await loadAssenze()}
-catch(e){showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnInviaAssenza',false,'📨 Invia')}}
+catch(e){showToast('Errore: '+errMsg(e))}finally{busy.assenza=false;setBtn('btnInviaAssenza',false,'📨 Invia')}}
 async function annullaAssenza(id){if(!confirm('Annullare questa richiesta?'))return;
 try{await db.collection('richiesteAssenza').doc(id).update({stato:'annullata',annullataIl:firebase.firestore.FieldValue.serverTimestamp()});showToast('Richiesta annullata');await loadAssenze()}catch(e){showToast('Errore: '+errMsg(e))}}
 
@@ -1274,7 +1287,7 @@ function resetRitorno(){
 
 async function salvaRitorno(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
-    if(submitting)return;
+    if(busy.ritorno)return;
     var dataStr=document.getElementById('rtData').value;
     var filiale=document.getElementById('rtFiliale').value;
     var motivo=document.getElementById('rtMotivo').value;
@@ -1298,7 +1311,7 @@ async function salvaRitorno(){
     var dupRit=ritorniList.some(function(r){if(!r.data)return false;var rd=r.data instanceof Date?r.data:(r.data.toDate?r.data.toDate():new Date(r.data));return rd.toDateString()===selDate.toDateString()&&String(r.filiale)===filiale&&r.motivo===motivo&&(r.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupRit){showToast('Hai già registrato questo ritorno per la data selezionata');return}
 
-    submitting=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
+    busy.ritorno=true;setBtn('btnSalvaRitorno',true,'Salvataggio...');
     try{var motivoLabels={
         merce_dimenticata:'Merce dimenticata in filiale',
         cliente_assente:'Cliente assente al primo tentativo',
@@ -1325,8 +1338,6 @@ async function salvaRitorno(){
         driverEmail:(auth.currentUser.email||'').toLowerCase(),
         targa:targaOggi,
         area:fd?fd.area:(dp.citta||'??'),
-        costoFattura:6.90,
-        costoDriver:cc,
         stato:'da_fatturare',
         data:firebase.firestore.Timestamp.fromDate(selDate),
         mese:selDate.getFullYear()+'-'+String(selDate.getMonth()+1).padStart(2,'0'),
@@ -1341,7 +1352,7 @@ async function salvaRitorno(){
     document.getElementById('rtSuccess').style.display='block';
     await loadRitorni();rOggi();
     showToast('Ritorno registrato');
-    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnSalvaRitorno',false,'✓ Conferma ritorno')}
+    }catch(e){console.error('salvaRitorno error:',e);showToast('Errore: '+errMsg(e))}finally{busy.ritorno=false;setBtn('btnSalvaRitorno',false,'✓ Conferma ritorno')}
 }
 
 // === SEGNALAZIONI ===
@@ -1371,7 +1382,7 @@ function initSegFiliali(){
 
 async function inviaSegnalazione(){
     if(!auth.currentUser){showToast('Sessione scaduta. Ricarica la pagina.');return}
-    if(submitting)return;
+    if(busy.segnala)return;
     var tipo=document.getElementById('segTipo').value;
     var filiale=document.getElementById('segFiliale').value;
     var cliente=document.getElementById('segCliente').value.trim();
@@ -1385,7 +1396,7 @@ async function inviaSegnalazione(){
     var dupSeg=segnalazioniList.some(function(s){return s.data===oggi&&s.tipo===tipo&&(s.filiale||null)===(filiale||null)&&(s.cliente||'').toLowerCase().trim()===(cliente||'').toLowerCase().trim()});
     if(dupSeg){showToast('Hai già inviato questa segnalazione oggi');return}
 
-    submitting=true;setBtn('btnInviaSeg',true,'Invio...');
+    busy.segnala=true;setBtn('btnInviaSeg',true,'Invio...');
 
     try{var tipoLabels={
         cliente_assente:'Cliente assente',
@@ -1423,7 +1434,7 @@ async function inviaSegnalazione(){
     document.getElementById('segSuccess').style.display='block';
     await loadSegnalazioni();
     showToast('Segnalazione inviata');
-    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+errMsg(e))}finally{submitting=false;setBtn('btnInviaSeg',false,'📨 Invia segnalazione')}
+    }catch(e){console.error('inviaSegnalazione error:',e);showToast('Errore: '+errMsg(e))}finally{busy.segnala=false;setBtn('btnInviaSeg',false,'📨 Invia segnalazione')}
 }
 
 function resetSegnala(){
